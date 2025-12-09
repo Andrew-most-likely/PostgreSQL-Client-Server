@@ -1,0 +1,12 @@
+{
+  "name": "node-postgres-service",
+  "version": "1.0.0",
+  "main": "index.js",
+"dependencies": {
+  "express": "^4.x",
+  "pg": "^8.x",
+  "cors": "^2.x",
+  "bcrypt": "^6.x",
+  "dotenv": "^16.x"
+}
+}

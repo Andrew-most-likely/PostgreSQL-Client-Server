@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #f6f8fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      width: 350px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid rgba(27,31,36,0.15);
+      border-radius: 6px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      display: none;
+    }
+
+    .card.active {
+      display: block;
+    }
+
+    label {
+      font-size: 14px;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 6px;
+      color: #24292e;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 93%;
+      padding: 8px 10px;
+      border: 1px solid #d0d7de;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      font-size: 14px;
+      background: #f6f8fa;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      border-color: #0969da;
+      outline: none;
+      background: #fff;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 8px 12px;
+      background: #2da44e;
+      border: 1px solid rgba(27,31,36,0.15);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #2c974b;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 12px;
+      color: #57606a;
+    }
+
+    a {
+      color: #0969da;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .message {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #d73a49;
+      text-align: center;
+    }
+
+    .message.success {
+      color: #2da44e;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card active" id="logForm">
+      <h1>Login</h1>
+      <form id="loginForm">
+        <label for="email">Email / Username</label>
+        <input id="email" type="text" required />
+
+        <label for="password">Password</label>
+        <input id="password" type="password" required />
+
+        <button class="btn" type="submit">Sign in</button>
+      </form>
+      <div id="message" class="message"></div>
+    </div>
+
+    <div class="card" id="regForm">
+      <h1>Register</h1>
+      <form id="registerForm">
+
+        <label for="regUser">Username</label>
+        <input id="regUser" type="text" required />
+
+        <label for="regFull">Full Name</label>
+        <input id="regFull" type="text" required />
+
+        <label for="regEmail">Email</label>
+        <input id="regEmail" type="text" required />
+
+        <label for="regPassword">Password</label>
+        <input id="regPassword" type="password" required />
+
+        <button class="btn" type="submit">Register</button>
+      </form>
+      <div id="regMessage" class="message"></div>
+    </div>
+
+    <div class="footer">
+      <p><a id="toggleLink">Register</a></p>
+    </div>
+  </div>
+
+  <script>
+    // Toggle forms
+    const logForm = document.getElementById("logForm");
+    const regForm = document.getElementById("regForm");
+    const toggleLink = document.getElementById("toggleLink");
+
+    toggleLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      const showingLogin = logForm.classList.contains("active");
+
+      if(showingLogin){
+        logForm.classList.remove("active");
+        regForm.classList.add("active");
+        toggleLink.textContent = "Login";
+      } else {
+        logForm.classList.add("active");
+        regForm.classList.remove("active");
+        toggleLink.textContent = "Register";
+      }
+    });
+
+    // Login form submission
+    const loginForm = document.getElementById("loginForm");
+    const message = document.getElementById("message");
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      message.textContent = "";
+
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        const res = await fetch("http://localhost:3000/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+
+        const data = await res.json();
+
+        if (res.ok && data.success && data.user) {
+          const role = data.user.role;
+          window.location.href = role === "admin" ? "admin.html" : "dashboard.html";
+        } else {
+          message.textContent = "Login failed: " + (data.message || "Unknown error");
+          message.className = "message error";
+        }
+
+      localStorage.setItem("user", JSON.stringify(data.user));
+      window.location.href = "../dashboard.html";
+
+
+
+      } catch(err) {
+        console.error(err);
+        message.textContent = "Error connecting to server.";
+        message.className = "message error";
+      }
+    });
+
+    // Registration form submission
+    const registerFormEl = document.getElementById("registerForm");
+    const regMessage = document.getElementById("regMessage");
+
+    registerFormEl.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      regMessage.textContent = "";
+
+      const email = document.getElementById("regEmail").value;
+      const password = document.getElementById("regPassword").value;
+      const username = document.getElementById("regUser").value;
+      const full_name = document.getElementById("regFull").value;
+
+      try {
+        const res = await fetch("http://localhost:3000/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({username, full_name, email, password, role: "user" }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          regMessage.textContent = "Registration successful! You can now login.";
+          regMessage.className = "message success";
+        } else {
+          regMessage.textContent = "Registration failed: " + (data.message || "Unknown error");
+          regMessage.className = "message error";
+        }
+      } catch(err) {
+        console.error(err);
+        regMessage.textContent = "Error connecting to server.";
+        regMessage.className = "message error";
+      }
+    });
+
+
+
+
+
+  </script>
+</body>
+</html>

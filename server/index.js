@@ -323,6 +323,118 @@ app.get("/api/user/analytics", authenticateToken, async (req, res) => {
 });
 
 
+// Create new account
+app.post("/api/user/accounts/create", authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `INSERT INTO accounts (user_id, balance, status)
+       VALUES ($1, 0, 'active')
+       RETURNING account_id, account_number, balance, status, created_at`,
+      [req.user.user_id]
+    );
+
+    res.status(201).json({
+      success: true,
+      account: result.rows[0]
+    });
+
+  } catch (err) {
+    console.error("Account creation error:", err);
+    res.status(500).json({ success: false, message: "Could not create account" });
+  }
+});
+
+// Deposit into account
+app.post("/api/user/accounts/:id/deposit", authenticateToken, async (req, res) => {
+  const accountId = parseInt(req.params.id);
+  const { amount } = req.body;
+
+  if (!amount || amount <= 0)
+    return res.status(400).json({ success: false, message: "Invalid amount" });
+
+  try {
+    // Ensure account belongs to user
+    const accountCheck = await pool.query(
+      "SELECT balance FROM accounts WHERE account_id = $1 AND user_id = $2",
+      [accountId, req.user.user_id]
+    );
+
+    if (accountCheck.rowCount === 0)
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+
+    const newBalance = parseFloat(accountCheck.rows[0].balance) + amount;
+
+    // Update balance
+    await pool.query(
+      "UPDATE accounts SET balance = $1 WHERE account_id = $2",
+      [newBalance, accountId]
+    );
+
+    // Add transaction
+    const tx = await pool.query(
+      `INSERT INTO transactions (account_id, transaction_type, amount, balance_after)
+       VALUES ($1, 'deposit', $2, $3)
+       RETURNING *`,
+      [accountId, amount, newBalance]
+    );
+
+    res.json({ success: true, transaction: tx.rows[0], newBalance });
+
+  } catch (err) {
+    console.error("Deposit error:", err);
+    res.status(500).json({ success: false, message: "Deposit failed" });
+  }
+});
+
+// Withdraw from account
+app.post("/api/user/accounts/:id/withdraw", authenticateToken, async (req, res) => {
+  const accountId = parseInt(req.params.id);
+  const { amount } = req.body;
+
+  if (!amount || amount <= 0)
+    return res.status(400).json({ success: false, message: "Invalid amount" });
+
+  try {
+    // Ensure account belongs to user
+    const accountCheck = await pool.query(
+      "SELECT balance FROM accounts WHERE account_id = $1 AND user_id = $2",
+      [accountId, req.user.user_id]
+    );
+
+    if (accountCheck.rowCount === 0)
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+
+    const balance = parseFloat(accountCheck.rows[0].balance);
+
+    if (balance < amount)
+      return res.status(400).json({ success: false, message: "Insufficient funds" });
+
+    const newBalance = balance - amount;
+
+    // Update balance
+    await pool.query(
+      "UPDATE accounts SET balance = $1 WHERE account_id = $2",
+      [newBalance, accountId]
+    );
+
+    // Add transaction
+    const tx = await pool.query(
+      `INSERT INTO transactions (account_id, transaction_type, amount, balance_after)
+       VALUES ($1, 'withdrawal', $2, $3)
+       RETURNING *`,
+      [accountId, amount, newBalance]
+    );
+
+    res.json({ success: true, transaction: tx.rows[0], newBalance });
+
+  } catch (err) {
+    console.error("Withdraw error:", err);
+    res.status(500).json({ success: false, message: "Withdrawal failed" });
+  }
+});
+
+
+
 // ================== ADMIN ROUTES ==================
 
 // Get all users (admin only)

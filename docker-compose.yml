@@ -5,39 +5,86 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql
       - ./db/init:/docker-entrypoint-initdb.d
     networks:
       - secure-net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   server:
     build: ./server
     environment:
-      PGHOST: ${PGHOST}
-      PGPORT: ${PGPORT}
+      PGHOST: db
+      PGPORT: 5432
       PGUSER: ${PGUSER}
       PGPASSWORD: ${PGPASSWORD}
       PGDATABASE: ${PGDATABASE}
+      PGSSLMODE: prefer
     ports:
       - "3000:3000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - secure-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
 
   frontend:
     build: ./frontend
     ports:
       - "8080:80"
-    volumes:
-      - ./frontend:/usr/share/nginx/html
+    depends_on:
+      - server
     networks:
       - secure-net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
 volumes:
   db_data:
 
 networks:
   secure-net:
     driver: bridge
+
+
+
+
+
+
+#project/
+#├── docker-compose.yml
+#├── .env
+#├── db/
+#│   └── init/
+#│       ├── 01_setup_ssl.sh    ← Generates SSL certs
+#│       └── init.sql           ← Lowkey drippy sql file
+#├── server/
+#│   ├── Dockerfile
+#│   ├── index.js
+#│   └── package.json
+#└── frontend/
+#    ├── Dockerfile
+#    ├── index.html
+#    ├── dashboard.html
+#    └── admin.html

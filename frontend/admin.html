@@ -3,63 +3,690 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Page</title>
+    <title>Admin Dashboard - Secure Bank</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background: #f7fafc;
         }
-        header {
-            margin-bottom: 30px;
+
+        .navbar {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .section {
-            margin-bottom: 25px;
+
+        .navbar h1 {
+            font-size: 24px;
+            font-weight: 700;
         }
-        .card {
-            padding: 15px;
-            border: 1px solid #ccc;
+
+        .navbar .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .navbar .badge {
+            background: rgba(255,255,255,0.3);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
             border-radius: 6px;
-            width: 300px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 32px auto;
+            padding: 0 24px;
+        }
+
+        .welcome {
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 32px;
+        }
+
+        .welcome h2 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            color: #1a202c;
+        }
+
+        .welcome p {
+            color: #718096;
+            font-size: 16px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .stat-card h3 {
+            font-size: 14px;
+            color: #718096;
+            margin-bottom: 12px;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1a202c;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #718096;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            color: #f5576c;
+            border-bottom-color: #f5576c;
+        }
+
+        .tab:hover {
+            color: #f5576c;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        thead {
+            background: #f7fafc;
+        }
+
+        th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #2d3748;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #4a5568;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .role-badge.admin {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .role-badge.standard {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status.active {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .status.suspended {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .transaction-type {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .transaction-type.deposit {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .transaction-type.withdrawal {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .transaction-type.transfer {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+        }
+
+        .card h3 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #1a202c;
+        }
+
+        pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Admin</h1>
-        <p>Welcome to the Admin page.</p>
-    </header>
-
-    <div class="section">
-        <h2>Profiles</h2>
-        <div class="card">
-            <p><strong>Name:</strong> John Doe</p>
-            <p><strong>Email:</strong> john@example.com</p>
+    <nav class="navbar">
+        <h1>Secure Bank - Admin</h1>
+        <div class="user-info">
+            <span class="badge">ADMIN</span>
+            <span id="userName"></span>
+            <button class="btn-logout" onclick="logout()">Logout</button>
         </div>
-        
-        <div class="card">
-            <p><strong>Name:</strong> John Doe</p>
-            <p><strong>Email:</strong> john@example.com</p>
+    </nav>
+
+    <div class="container">
+        <div class="welcome">
+            <h2>Admin Dashboard</h2>
+            <p>System overview and management</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Users</h3>
+                <div class="value" id="totalUsers">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Accounts</h3>
+                <div class="value" id="totalAccounts">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Transactions</h3>
+                <div class="value" id="totalTransactions">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Accounts</h3>
+                <div class="value" id="activeAccounts">-</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('users')">Users</button>
+            <button class="tab" onclick="showTab('accounts')">Accounts</button>
+            <button class="tab" onclick="showTab('transactions')">Transactions</button>
+            <button class="tab" onclick="showTab('analytics')">Analytics</button>
+            <button class="tab" onclick="showTab('json')">JSON API</button>
+        </div>
+
+        <div class="tab-content active" id="usersTab">
+            <div id="usersLoading" class="loading">Loading users...</div>
+            <div id="usersError" class="error" style="display:none;"></div>
+            <div id="usersContent"></div>
+        </div>
+
+        <div class="tab-content" id="accountsTab">
+            <div id="accountsLoading" class="loading">Loading accounts...</div>
+            <div id="accountsError" class="error" style="display:none;"></div>
+            <div id="accountsContent"></div>
+        </div>
+
+        <div class="tab-content" id="transactionsTab">
+            <div id="transactionsLoading" class="loading">Loading transactions...</div>
+            <div id="transactionsError" class="error" style="display:none;"></div>
+            <div id="transactionsContent"></div>
+        </div>
+
+        <div class="tab-content" id="analyticsTab">
+            <div id="analyticsLoading" class="loading">Loading analytics...</div>
+            <div id="analyticsError" class="error" style="display:none;"></div>
+            <div id="analyticsContent"></div>
+        </div>
+
+        <div class="tab-content" id="jsonTab">
+            <div id="jsonLoading" class="loading">Loading JSON data...</div>
+            <div id="jsonError" class="error" style="display:none;"></div>
+            <div id="jsonContent"></div>
         </div>
     </div>
 
-    <div class="section">
-        <h2>Settings</h2>
-        <ul>
-            <li>Change password</li>
-            <li>Privacy preferences</li>
-            <li>Account management</li>
-        </ul>
-    </div>
+    <script>
+        const API_URL = "http://localhost:3000";
+        let currentUser = null;
 
-    <div class="section">
-        <h2>Recent Activity</h2>
-        <p>No recent activity.</p>
-    </div>
+        function checkAuth() {
+            const userStr = localStorage.getItem("user");
+            if (!userStr) {
+                window.location.href = "index.html";
+                return null;
+            }
+            const user = JSON.parse(userStr);
+            if (user.role !== 'admin') {
+                window.location.href = "dashboard.html";
+                return null;
+            }
+            return user;
+        }
+
+        function logout() {
+            localStorage.removeItem("user");
+            window.location.href = "index.html";
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+
+            if (tabName === 'users') loadUsers();
+            else if (tabName === 'accounts') loadAccounts();
+            else if (tabName === 'transactions') loadTransactions();
+            else if (tabName === 'analytics') loadAnalytics();
+            else if (tabName === 'json') loadJSONData();
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_URL}/api/data/sample`, {
+                    headers: { 'X-User-Id': currentUser.id }
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    document.getElementById('totalUsers').textContent = data.data.statistics.totalUsers;
+                    document.getElementById('totalAccounts').textContent = data.data.statistics.activeAccounts;
+                    document.getElementById('totalTransactions').textContent = data.data.statistics.totalTransactions;
+                    
+                    const accountsRes = await fetch(`${API_URL}/api/accounts`, {
+                        headers: { 'X-User-Id': currentUser.id }
+                    });
+                    const accountsData = await accountsRes.json();
+                    if (accountsData.success) {
+                        const active = accountsData.accounts.filter(a => a.status === 'active').length;
+                        document.getElementById('activeAccounts').textContent = active;
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load stats:', err);
+            }
+        }
+
+        async function loadUsers() {
+            document.getElementById('usersLoading').style.display = 'block';
+            document.getElementById('usersContent').innerHTML = '';
+            document.getElementById('usersError').style.display = 'none';
+
+            try {
+                const res = await fetch(`${API_URL}/api/users`, {
+                    headers: { 'X-User-Id': currentUser.id }
+                });
+                const data = await res.json();
+                
+                document.getElementById('usersLoading').style.display = 'none';
+
+                if (data.success) {
+                    document.getElementById('usersContent').innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.users.map(u => `
+                                    <tr>
+                                        <td>${u.id}</td>
+                                        <td>${u.username}</td>
+                                        <td>${u.full_name}</td>
+                                        <td>${u.email}</td>
+                                        <td><span class="role-badge ${u.role}">${u.role}</span></td>
+                                        <td>${new Date(u.created_at).toLocaleDateString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (err) {
+                document.getElementById('usersLoading').style.display = 'none';
+                document.getElementById('usersError').textContent = 'Failed to load users';
+                document.getElementById('usersError').style.display = 'block';
+                console.error(err);
+            }
+        }
+
+        async function loadAccounts() {
+            document.getElementById('accountsLoading').style.display = 'block';
+            document.getElementById('accountsContent').innerHTML = '';
+            document.getElementById('accountsError').style.display = 'none';
+
+            try {
+                const res = await fetch(`${API_URL}/api/accounts`, {
+                    headers: { 'X-User-Id': currentUser.id }
+                });
+                const data = await res.json();
+                
+                document.getElementById('accountsLoading').style.display = 'none';
+
+                if (data.success) {
+                    document.getElementById('accountsContent').innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Account ID</th>
+                                    <th>Account Number</th>
+                                    <th>Owner</th>
+                                    <th>Balance</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.accounts.map(a => `
+                                    <tr>
+                                        <td>${a.account_id}</td>
+                                        <td style="font-family: monospace; font-weight: 600;">${a.account_number}</td>
+                                        <td>${a.full_name} (@${a.username})</td>
+                                        <td style="font-weight: 600; color: #48bb78;">$${parseFloat(a.balance).toFixed(2)}</td>
+                                        <td><span class="status ${a.status}">${a.status}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (err) {
+                document.getElementById('accountsLoading').style.display = 'none';
+                document.getElementById('accountsError').textContent = 'Failed to load accounts';
+                document.getElementById('accountsError').style.display = 'block';
+                console.error(err);
+            }
+        }
+
+        async function loadTransactions() {
+            document.getElementById('transactionsLoading').style.display = 'block';
+            document.getElementById('transactionsContent').innerHTML = '';
+            document.getElementById('transactionsError').style.display = 'none';
+
+            try {
+                const res = await fetch(`${API_URL}/api/transactions`, {
+                    headers: { 'X-User-Id': currentUser.id }
+                });
+                const data = await res.json();
+                
+                document.getElementById('transactionsLoading').style.display = 'none';
+
+                if (data.success) {
+                    document.getElementById('transactionsContent').innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Date</th>
+                                    <th>Account</th>
+                                    <th>User</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.transactions.map(t => `
+                                    <tr>
+                                        <td>${t.transaction_id}</td>
+                                        <td>${new Date(t.transaction_date).toLocaleString()}</td>
+                                        <td>${t.account_number}</td>
+                                        <td>${t.username}</td>
+                                        <td><span class="transaction-type ${t.transaction_type}">${t.transaction_type}</span></td>
+                                        <td style="font-weight: 600;">$${parseFloat(t.amount).toFixed(2)}</td>
+                                        <td>${t.description || 'N/A'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (err) {
+                document.getElementById('transactionsLoading').style.display = 'none';
+                document.getElementById('transactionsError').textContent = 'Failed to load transactions';
+                document.getElementById('transactionsError').style.display = 'block';
+                console.error(err);
+            }
+        }
+
+        async function loadAnalytics() {
+            document.getElementById('analyticsLoading').style.display = 'block';
+            document.getElementById('analyticsContent').innerHTML = '';
+            document.getElementById('analyticsError').style.display = 'none';
+
+            try {
+                const res = await fetch(`${API_URL}/api/analytics/transactions`, {
+                    headers: { 'X-User-Id': currentUser.id }
+                });
+                const data = await res.json();
+                
+                document.getElementById('analyticsLoading').style.display = 'none';
+
+                if (data.success) {
+                    const analytics = data.analytics;
+                    document.getElementById('analyticsContent').innerHTML = `
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <h3>Total Transactions</h3>
+                                <div class="value">${analytics.totalTransactions}</div>
+                            </div>
+                            <div class="stat-card">
+                                <h3>Total Deposits</h3>
+                                <div class="value" style="color: #48bb78;">$${analytics.totalDeposits.toFixed(2)}</div>
+                            </div>
+                            <div class="stat-card">
+                                <h3>Total Withdrawals</h3>
+                                <div class="value" style="color: #f56565;">$${analytics.totalWithdrawals.toFixed(2)}</div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>Transaction Breakdown</h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Count</th>
+                                        <th>Total Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${analytics.byType.map(t => `
+                                        <tr>
+                                            <td><span class="transaction-type ${t.transaction_type}">${t.transaction_type}</span></td>
+                                            <td>${t.count}</td>
+                                            <td>$${parseFloat(t.total_amount).toFixed(2)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="card">
+                            <h3>Recent Transactions</h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Account</th>
+                                        <th>User</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${analytics.recentTransactions.map(t => `
+                                        <tr>
+                                            <td>${new Date(t.transaction_date).toLocaleString()}</td>
+                                            <td>${t.account_number}</td>
+                                            <td>${t.username}</td>
+                                            <td><span class="transaction-type ${t.transaction_type}">${t.transaction_type}</span></td>
+                                            <td>$${parseFloat(t.amount).toFixed(2)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                document.getElementById('analyticsLoading').style.display = 'none';
+                document.getElementById('analyticsError').textContent = 'Failed to load analytics';
+                document.getElementById('analyticsError').style.display = 'block';
+                console.error(err);
+            }
+        }
+
+        async function loadJSONData() {
+            document.getElementById('jsonLoading').style.display = 'block';
+            document.getElementById('jsonContent').innerHTML = '';
+            document.getElementById('jsonError').style.display = 'none';
+
+            try {
+                const res = await fetch(`${API_URL}/api/data/sample`, {
+                    headers: { 'X-User-Id': currentUser.id }
+                });
+                const data = await res.json();
+                
+                document.getElementById('jsonLoading').style.display = 'none';
+
+                if (data.success) {
+                    document.getElementById('jsonContent').innerHTML = `
+                        <div class="card">
+                            <h3>🔒 Secure JSON API Response</h3>
+                            <p style="color: #718096; margin-bottom: 16px;">This endpoint is protected and only accessible to authenticated users.</p>
+                            <pre>${JSON.stringify(data.data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                document.getElementById('jsonLoading').style.display = 'none';
+                document.getElementById('jsonError').textContent = 'Failed to load JSON data';
+                document.getElementById('jsonError').style.display = 'block';
+                console.error(err);
+            }
+        }
+
+        currentUser = checkAuth();
+        if (currentUser) {
+            document.getElementById('userName').textContent = currentUser.full_name;
+            loadStats();
+            loadUsers();
+        }
+    </script>
 </body>
-
-<script>
-
-
-</script>
-
 </html>

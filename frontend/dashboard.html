@@ -1,75 +1,599 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Page</title>
+    <title>User Dashboard - Secure Bank</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background: #f7fafc;
         }
 
-        header {
-            margin-bottom: 30px;
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        .section {
-            margin-bottom: 25px;
+        .navbar h1 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .navbar .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .navbar .user-name {
+            font-weight: 600;
+        }
+
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 32px auto;
+            padding: 0 24px;
+        }
+
+        .welcome {
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 32px;
+        }
+
+        .welcome h2 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            color: #1a202c;
+        }
+
+        .welcome p {
+            color: #718096;
+            font-size: 16px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #718096;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
         }
 
         .card {
-            padding: 15px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            width: 300px;
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        .card h3 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #1a202c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-content {
+            color: #4a5568;
+        }
+
+        .card-content p {
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .card-content strong {
+            color: #2d3748;
+        }
+
+        .account-number {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .balance {
+            font-size: 24px;
+            font-weight: 700;
+            color: #48bb78;
+            margin: 16px 0;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status.active {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .status.suspended {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        table {
+            width: 100%;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        thead {
+            background: #f7fafc;
+        }
+
+        th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #2d3748;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #4a5568;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .transaction-type {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .transaction-type.deposit {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .transaction-type.withdrawal {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .transaction-type.transfer {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+
+        .amount-positive {
+            color: #48bb78;
+            font-weight: 600;
+        }
+
+        .amount-negative {
+            color: #f56565;
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
         }
     </style>
 </head>
-
 <body>
-    <header>
-        <h1>User</h1>
-        <p>Welcome to the user page.</p>
-    </header>
+    <nav class="navbar">
+        <h1>Secure Bank</h1>
+        <div class="user-info">
+            <span class="user-name" id="userName"></span>
+            <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
+    </nav>
 
-    <div class="section">
-        <h2>Profile</h2>
-        <div class="card">
-            <p><strong>Name:</strong> <span id="fullname"></span></p>
-            <p><strong>Email:</strong> <span id="email" ></span></p>
+    <div class="container">
+        <div class="welcome">
+            <h2 id="welcomeMessage"></h2>
+            <p>Manage your accounts and view transaction history</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('accounts')">My Accounts</button>
+            <button class="tab" onclick="showTab('transactions')">Transactions</button>
+            <button class="tab" onclick="showTab('analytics')">Analytics</button>
+        </div>
+
+        <!-- Accounts Tab -->
+        <div class="tab-content active" id="accountsTab">
+            <div id="accountsLoading" class="loading">Loading your accounts...</div>
+            <div id="accountsError" class="error" style="display:none;"></div>
+            <div id="accountsGrid" class="card-grid"></div>
+        </div>
+
+        <!-- Transactions Tab -->
+        <div class="tab-content" id="transactionsTab">
+            <div id="transactionsLoading" class="loading">Loading transactions...</div>
+            <div id="transactionsError" class="error" style="display:none;"></div>
+            <div id="transactionsContent"></div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div class="tab-content" id="analyticsTab">
+            <div id="analyticsLoading" class="loading">Loading analytics...</div>
+            <div id="analyticsError" class="error" style="display:none;"></div>
+            <div id="analyticsContent"></div>
         </div>
     </div>
 
-    <div class="section">
-        <h2>Settings</h2>
-        <ul>
-            <li>Change password</li>
-            <li>Account management</li>
-        </ul>
-    </div>
+    <script>
+        const API_URL = "http://localhost:3000";
+        let currentUser = null;
 
+        // Check authentication
+        function checkAuth() {
+            const userStr = localStorage.getItem("user");
+            if (!userStr) {
+                window.location.href = "index.html";
+                return null;
+            }
+            return JSON.parse(userStr);
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem("user");
+            window.location.href = "index.html";
+        }
+
+        // Tab switching
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+
+            if (tabName === 'transactions') {
+                loadAllTransactions();
+            } else if (tabName === 'analytics') {
+                loadAnalytics();
+            }
+        }
+
+        // Load user accounts
+        async function loadAccounts() {
+            try {
+                const res = await fetch(`${API_URL}/api/accounts/${currentUser.id}`, {
+                    headers: { 'X-User-Id': currentUser.id }
+                });
+
+                const data = await res.json();
+                document.getElementById('accountsLoading').style.display = 'none';
+
+                if (data.success && data.accounts.length > 0) {
+                    const grid = document.getElementById('accountsGrid');
+                    grid.innerHTML = data.accounts.map(acc => `
+                        <div class="card">
+                            <h3> Account ${acc.account_number}</h3>
+                            <div class="card-content">
+                                <p class="account-number">${acc.account_number}</p>
+                                <div class="balance">$${parseFloat(acc.balance).toFixed(2)}</div>
+                                <p>
+                                    <strong>Status:</strong>
+                                    <span class="status ${acc.status}">${acc.status}</span>
+                                </p>
+                                <button class="tab" onclick="loadTransactions(${acc.account_id})" style="margin-top: 16px; width: 100%;">View Transactions</button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('accountsGrid').innerHTML = `
+                        <div class="empty-state">
+                            <p>No accounts found</p>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                document.getElementById('accountsLoading').style.display = 'none';
+                document.getElementById('accountsError').textContent = 'Failed to load accounts';
+                document.getElementById('accountsError').style.display = 'block';
+                console.error(err);
+            }
+        }
+
+        // Load transactions for specific account
+        async function loadTransactions(accountId) {
+            showTab('transactions');
+            document.getElementById('transactionsLoading').style.display = 'block';
+            document.getElementById('transactionsContent').innerHTML = '';
+
+            try {
+                const res = await fetch(`${API_URL}/api/transactions/${accountId}`, {
+                    headers: { 'X-User-Id': currentUser.id }
+                });
+
+                const data = await res.json();
+                document.getElementById('transactionsLoading').style.display = 'none';
+
+                if (data.success && data.transactions.length > 0) {
+                    renderTransactions(data.transactions);
+                } else {
+                    document.getElementById('transactionsContent').innerHTML = `
+                        <div class="empty-state">
+                            <p>No transactions found for this account</p>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                document.getElementById('transactionsLoading').style.display = 'none';
+                document.getElementById('transactionsError').textContent = 'Failed to load transactions';
+                document.getElementById('transactionsError').style.display = 'block';
+                console.error(err);
+            }
+        }
+
+        // Load all user transactions
+        async function loadAllTransactions() {
+            document.getElementById('transactionsLoading').style.display = 'block';
+            document.getElementById('transactionsContent').innerHTML = '';
+
+            try {
+                // Get user's accounts first
+                const accountsRes = await fetch(`${API_URL}/api/accounts/${currentUser.id}`, {
+                    headers: { 'X-User-Id': currentUser.id }
+                });
+                const accountsData = await accountsRes.json();
+
+                if (!accountsData.success || accountsData.accounts.length === 0) {
+                    document.getElementById('transactionsLoading').style.display = 'none';
+                    document.getElementById('transactionsContent').innerHTML = `
+                        <div class="empty-state">
+                            <p>No accounts found</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Load transactions for first account
+                const firstAccount = accountsData.accounts[0];
+                loadTransactions(firstAccount.account_id);
+
+            } catch (err) {
+                document.getElementById('transactionsLoading').style.display = 'none';
+                document.getElementById('transactionsError').textContent = 'Failed to load transactions';
+                document.getElementById('transactionsError').style.display = 'block';
+                console.error(err);
+            }
+        }
+
+        // Render transactions table
+        function renderTransactions(transactions) {
+            const content = document.getElementById('transactionsContent');
+            content.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${transactions.map(t => `
+                            <tr>
+                                <td>${new Date(t.transaction_date).toLocaleString()}</td>
+                                <td><span class="transaction-type ${t.transaction_type}">${t.transaction_type}</span></td>
+                                <td class="${t.transaction_type === 'deposit' ? 'amount-positive' : 'amount-negative'}">
+                                    ${t.transaction_type === 'deposit' ? '+' : '-'}$${parseFloat(t.amount).toFixed(2)}
+                                </td>
+                                <td>${t.description || 'N/A'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Load analytics
+        async function loadAnalytics() {
+            document.getElementById('analyticsLoading').style.display = 'block';
+            document.getElementById('analyticsContent').innerHTML = '';
+
+            try {
+                const res = await fetch(`${API_URL}/api/analytics/transactions`, {
+                    headers: { 'X-User-Id': currentUser.id }
+                });
+
+                const data = await res.json();
+                document.getElementById('analyticsLoading').style.display = 'none';
+
+                if (data.success) {
+                    const analytics = data.analytics;
+                    document.getElementById('analyticsContent').innerHTML = `
+                        <div class="card-grid">
+                            <div class="card">
+                                <h3> Total Transactions</h3>
+                                <div class="balance">${analytics.totalTransactions}</div>
+                            </div>
+                            <div class="card">
+                                <h3> Total Deposits</h3>
+                                <div class="balance amount-positive">$${analytics.totalDeposits.toFixed(2)}</div>
+                            </div>
+                            <div class="card">
+                                <h3> Total Withdrawals</h3>
+                                <div class="balance amount-negative">$${analytics.totalWithdrawals.toFixed(2)}</div>
+                            </div>
+                        </div>
+
+                        <div class="card" style="margin-top: 24px;">
+                            <h3> Transaction Breakdown</h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Count</th>
+                                        <th>Total Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${analytics.byType.map(t => `
+                                        <tr>
+                                            <td><span class="transaction-type ${t.transaction_type}">${t.transaction_type}</span></td>
+                                            <td>${t.count}</td>
+                                            <td>$${parseFloat(t.total_amount).toFixed(2)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="card" style="margin-top: 24px;">
+                            <h3> Recent Transactions</h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Account</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${analytics.recentTransactions.map(t => `
+                                        <tr>
+                                            <td>${new Date(t.transaction_date).toLocaleString()}</td>
+                                            <td>${t.account_number}</td>
+                                            <td><span class="transaction-type ${t.transaction_type}">${t.transaction_type}</span></td>
+                                            <td class="${t.transaction_type === 'deposit' ? 'amount-positive' : 'amount-negative'}">
+                                                $${parseFloat(t.amount).toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                document.getElementById('analyticsLoading').style.display = 'none';
+                document.getElementById('analyticsError').textContent = 'Failed to load analytics';
+                document.getElementById('analyticsError').style.display = 'block';
+                console.error(err);
+            }
+        }
+
+        // Initialize
+        currentUser = checkAuth();
+        if (currentUser) {
+            document.getElementById('userName').textContent = currentUser.full_name;
+            document.getElementById('welcomeMessage').textContent = `Welcome back, ${currentUser.full_name}!`;
+            loadAccounts();
+        }
+    </script>
 </body>
-<script>
-const user = JSON.parse(localStorage.getItem("user"));
-
-if (user) {
-  console.log(user.id);
-  console.log(user.username);
-  console.log(user.email);
-  console.log(user.full_name);
-  console.log(user.role);
-
-  // Example: insert into HTML
- // document.getElementById("username").textContent = user.username;
-  document.getElementById("email").textContent = user.email;
-  document.getElementById("fullname").textContent = user.full_name;
- // document.getElementById("role").textContent = user.role;
-} else {
-  // If user is not logged in, redirect
-  window.location.href = "index.html";
-}
-</script>
-
 </html>

@@ -1,4 +1,16 @@
-CREATE DATABASE secure_system;
+-- ============================================
+-- SECURE BANKING SYSTEM - COMPLETE DATABASE SETUP
+-- ============================================
+
+-- Enable SSL
+ALTER SYSTEM SET ssl = 'on';
+ALTER SYSTEM SET ssl_cert_file = '/var/lib/postgresql/ssl/server.crt';
+ALTER SYSTEM SET ssl_key_file = '/var/lib/postgresql/ssl/server.key';
+SELECT pg_reload_conf();
+
+-- ============================================
+-- CREATE TABLES
+-- ============================================
 
 CREATE TABLE users (
   id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -10,6 +22,28 @@ CREATE TABLE users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE accounts (
+  account_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  id INT NOT NULL,
+  account_number VARCHAR(16) UNIQUE NOT NULL,
+  balance DECIMAL(10,2) DEFAULT 0.00,
+  status VARCHAR(20) DEFAULT 'active',
+  FOREIGN KEY (id) REFERENCES users(id)
+);
+
+CREATE TABLE transactions (
+  transaction_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  account_id INT NOT NULL,
+  transaction_type VARCHAR(20) NOT NULL,
+  amount DECIMAL(10,2) NOT NULL,
+  transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  description VARCHAR(255),
+  FOREIGN KEY (account_id) REFERENCES accounts(account_id)
+);
+
+-- ============================================
+-- INSERT SAMPLE DATA
+-- ============================================
 
 INSERT INTO users (username, password, full_name, email, role) VALUES
 ('admin','f7b61c56f7f8e5bbf86c7dc421d3a3cfb7a59c994a854b62561254b85b52d4b6','System Administrator','admin@secure.local','admin'),
@@ -34,15 +68,6 @@ INSERT INTO users (username, password, full_name, email, role) VALUES
 ('danielsmith','e373a9ee6f45ddc10383cc56f3114d8b5c55c5c9b998f3760e0bd8cd47e80008','Lisa Murillo','iedwards@hotmail.com','standard'),
 ('ilewis','57e4b455173919ca15c1ab1432b7e49641df72adb0ad8300cf5f2dcc3a242963','Donna Gonzalez','mariawilliams@carter.com','standard');
 
-CREATE TABLE accounts (
-  account_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  id INT NOT NULL,
-  account_number VARCHAR(16) UNIQUE NOT NULL,
-  balance DECIMAL(10,2) DEFAULT 0.00,
-  status VARCHAR(20) DEFAULT 'active',
-  FOREIGN KEY (id) REFERENCES users(id)
-);
-
 INSERT INTO accounts (id, account_number, balance, status) VALUES
 (2,'ACC2002',2185.98,'active'),
 (3,'ACC2003',177.76,'active'),
@@ -64,16 +89,6 @@ INSERT INTO accounts (id, account_number, balance, status) VALUES
 (19,'ACC2019',1822.35,'active'),
 (20,'ACC2020',3930.69,'active'),
 (21,'ACC2021',649.39,'active');
-
-CREATE TABLE transactions (
-  transaction_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  account_id INT NOT NULL,
-  transaction_type VARCHAR(20) NOT NULL,
-  amount DECIMAL(10,2) NOT NULL,
-  transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  description VARCHAR(255),
-  FOREIGN KEY (account_id) REFERENCES accounts(account_id)
-);
 
 INSERT INTO transactions (account_id, transaction_type, amount, description) VALUES
 (19,'withdrawal',802.87,'Can beautiful on street throw organization.'),
@@ -116,3 +131,41 @@ INSERT INTO transactions (account_id, transaction_type, amount, description) VAL
 (7,'transfer',256.44,'Name focus purpose claim picture movement.'),
 (13,'deposit',147.54,'Consider thank market each about much.'),
 (2,'deposit',932.37,'Reach financial turn born later try.');
+
+-- ============================================
+-- CREATE RESTRICTED DATABASE USERS
+-- ============================================
+
+-- Admin user with full privileges
+CREATE USER admin_user WITH PASSWORD 'AdminPass123!';
+GRANT ALL PRIVILEGES ON DATABASE secure_system TO admin_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO admin_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO admin_user;
+
+-- App user with restricted privileges (read-only plus limited write)
+CREATE USER app_user WITH PASSWORD 'AppPass456!';
+GRANT CONNECT ON DATABASE secure_system TO app_user;
+GRANT USAGE ON SCHEMA public TO app_user;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO app_user;
+GRANT INSERT, UPDATE ON users TO app_user;
+GRANT INSERT, UPDATE ON accounts TO app_user;
+GRANT INSERT ON transactions TO app_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_user;
+REVOKE DELETE ON ALL TABLES IN SCHEMA public FROM app_user;
+
+-- Display created users
+\du
+
+-- ============================================
+-- VERIFICATION
+-- ============================================
+
+-- Show table counts
+SELECT 'users' as table_name, COUNT(*) as row_count FROM users
+UNION ALL
+SELECT 'accounts', COUNT(*) FROM accounts
+UNION ALL
+SELECT 'transactions', COUNT(*) FROM transactions;
+
+-- Show SSL status
+SHOW ssl;

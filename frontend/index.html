@@ -1,30 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login</title>
+  <title>Secure Banking System - Login</title>
   <style>
-    body {
+    * {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      background: #f6f8fa;
+      background: white;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
+      padding: 20px;
     }
 
     .container {
-      width: 350px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+      color: white;
+    }
+
+    .logo h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .logo p {
+      font-size: 14px;
+      opacity: 0.9;
     }
 
     .card {
       background: #fff;
-      border: 1px solid rgba(27,31,36,0.15);
-      border-radius: 6px;
-      padding: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      border-radius: 12px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
       display: none;
     }
 
@@ -32,221 +56,284 @@
       display: block;
     }
 
+    .card h2 {
+      font-size: 24px;
+      margin-bottom: 24px;
+      color: #1a202c;
+      text-align: center;
+    }
+
     label {
       font-size: 14px;
       font-weight: 600;
       display: block;
-      margin-bottom: 6px;
-      color: #24292e;
+      margin-bottom: 8px;
+      color: #2d3748;
     }
 
     input[type="text"],
+    input[type="email"],
     input[type="password"] {
-      width: 93%;
-      padding: 8px 10px;
-      border: 1px solid #d0d7de;
-      border-radius: 6px;
-      margin-bottom: 15px;
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 16px;
       font-size: 14px;
-      background: #f6f8fa;
+      transition: border-color 0.2s;
     }
 
-    input[type="text"]:focus,
-    input[type="password"]:focus {
-      border-color: #0969da;
+    input:focus {
+      border-color: #667eea;
       outline: none;
-      background: #fff;
     }
 
     .btn {
       width: 100%;
-      padding: 8px 12px;
-      background: #2da44e;
-      border: 1px solid rgba(27,31,36,0.15);
+      padding: 14px;
+      background: rgb(72, 161, 72);
+      border: none;
       color: #fff;
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 600;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .btn:hover {
-      background: #2c974b;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
     }
 
     .footer {
       text-align: center;
-      margin-top: 16px;
-      font-size: 12px;
-      color: #57606a;
+      margin-top: 24px;
+      font-size: 14px;
+      color: black;
     }
 
-    a {
-      color: #0969da;
+    .footer a {
+      color: black;
       text-decoration: none;
+      font-weight: 600;
       cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: border-color 0.2s;
     }
 
-    a:hover {
-      text-decoration: underline;
+    .footer a:hover {
+      border-bottom-color: black;
     }
 
     .message {
-      margin-top: 10px;
+      margin-top: 16px;
+      padding: 12px;
       font-size: 14px;
-      color: #d73a49;
+      border-radius: 6px;
       text-align: center;
+      display: none;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.error {
+      background: #fed7d7;
+      color: #c53030;
+      border: 1px solid #fc8181;
     }
 
     .message.success {
-      color: #2da44e;
+      background: #c6f6d5;
+      color: #2f855a;
+      border: 1px solid #68d391;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      margin-top: 12px;
+      color: #667eea;
+      font-size: 14px;
+    }
+
+    .loading.show {
+      display: block;
     }
   </style>
 </head>
+
 <body>
   <div class="container">
-    <div class="card active" id="logForm">
-      <h1>Login</h1>
-      <form id="loginForm">
-        <label for="email">Email / Username</label>
-        <input id="email" type="text" required />
-
-        <label for="password">Password</label>
-        <input id="password" type="password" required />
-
-        <button class="btn" type="submit">Sign in</button>
-      </form>
-      <div id="message" class="message"></div>
+    <div class="logo">
     </div>
 
-    <div class="card" id="regForm">
-      <h1>Register</h1>
+    <!-- Login Form -->
+    <div class="card active" id="loginCard">
+      <h2>Sign In</h2>
+      <form id="loginForm">
+        <label for="loginEmail">Email or Username</label>
+        <input id="loginEmail" type="text" required placeholder="Enter your email or username" />
+
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" type="password" required placeholder="Enter your password" />
+
+        <button class="btn" type="submit">Sign In</button>
+      </form>
+      <div class="loading" id="loginLoading">Authenticating...</div>
+      <div class="message" id="loginMessage"></div>
+    </div>
+
+    <!-- Register Form -->
+    <div class="card" id="registerCard">
+      <h2>Create Account</h2>
       <form id="registerForm">
+        <label for="regUsername">Username</label>
+        <input id="regUsername" type="text" required placeholder="Choose a username" />
 
-        <label for="regUser">Username</label>
-        <input id="regUser" type="text" required />
-
-        <label for="regFull">Full Name</label>
-        <input id="regFull" type="text" required />
+        <label for="regFullName">Full Name</label>
+        <input id="regFullName" type="text" required placeholder="Enter your full name" />
 
         <label for="regEmail">Email</label>
-        <input id="regEmail" type="text" required />
+        <input id="regEmail" type="email" required placeholder="Enter your email" />
 
         <label for="regPassword">Password</label>
-        <input id="regPassword" type="password" required />
+        <input id="regPassword" type="password" required placeholder="Choose a strong password" />
 
-        <button class="btn" type="submit">Register</button>
+        <button class="btn" type="submit">Create Account</button>
       </form>
-      <div id="regMessage" class="message"></div>
+      <div class="loading" id="registerLoading">Creating account...</div>
+      <div class="message" id="registerMessage"></div>
     </div>
 
     <div class="footer">
-      <p><a id="toggleLink">Register</a></p>
+      <p id="toggleText">Don't have an account? <a id="toggleLink">Sign Up</a></p>
     </div>
   </div>
 
   <script>
-    // Toggle forms
-    const logForm = document.getElementById("logForm");
-    const regForm = document.getElementById("regForm");
+    const API_URL = "http://localhost:3000";
+
+    const loginCard = document.getElementById("loginCard");
+    const registerCard = document.getElementById("registerCard");
     const toggleLink = document.getElementById("toggleLink");
+    const toggleText = document.getElementById("toggleText");
 
-    toggleLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      const showingLogin = logForm.classList.contains("active");
+    // Toggle between login and register
+    toggleLink.addEventListener("click", () => {
+      const showingLogin = loginCard.classList.contains("active");
 
-      if(showingLogin){
-        logForm.classList.remove("active");
-        regForm.classList.add("active");
-        toggleLink.textContent = "Login";
+      if (showingLogin) {
+        loginCard.classList.remove("active");
+        registerCard.classList.add("active");
+
+        toggleText.childNodes[0].textContent = "Already have an account? ";
+        toggleLink.textContent = "Sign In";
       } else {
-        logForm.classList.add("active");
-        regForm.classList.remove("active");
-        toggleLink.textContent = "Register";
+        registerCard.classList.remove("active");
+        loginCard.classList.add("active");
+
+        toggleText.childNodes[0].textContent = "Don't have an account? ";
+        toggleLink.textContent = "Sign Up";
       }
     });
 
-    // Login form submission
-    const loginForm = document.getElementById("loginForm");
-    const message = document.getElementById("message");
-
-    loginForm.addEventListener("submit", async (e) => {
+    // Login form
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      message.textContent = "";
 
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+      const loading = document.getElementById("loginLoading");
+      const message = document.getElementById("loginMessage");
+      message.classList.remove("show");
+      loading.classList.add("show");
+
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
 
       try {
-        const res = await fetch("http://localhost:3000/login", {
+        const res = await fetch(`${API_URL}/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
         });
 
-
         const data = await res.json();
+        loading.classList.remove("show");
 
         if (res.ok && data.success && data.user) {
-          const role = data.user.role;
-          window.location.href = role === "admin" ? "admin.html" : "dashboard.html";
+          localStorage.setItem("user", JSON.stringify(data.user));
+
+          message.textContent = "Login successful! Redirecting...";
+          message.className = "message success show";
+
+          setTimeout(() => {
+            window.location.href = data.user.role === "admin" ? "admin.html" : "dashboard.html";
+          }, 1000);
         } else {
-          message.textContent = "Login failed: " + (data.message || "Unknown error");
-          message.className = "message error";
+          message.textContent = data.message || "Login failed";
+          message.className = "message error show";
         }
-
-      localStorage.setItem("user", JSON.stringify(data.user));
-      window.location.href = "../dashboard.html";
-
-
-
-      } catch(err) {
+      } catch (err) {
+        loading.classList.remove("show");
+        message.textContent = "Connection error. Please try again.";
+        message.className = "message error show";
         console.error(err);
-        message.textContent = "Error connecting to server.";
-        message.className = "message error";
       }
     });
 
-    // Registration form submission
-    const registerFormEl = document.getElementById("registerForm");
-    const regMessage = document.getElementById("regMessage");
-
-    registerFormEl.addEventListener("submit", async (e) => {
+    // Register form
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      regMessage.textContent = "";
 
+      const loading = document.getElementById("registerLoading");
+      const message = document.getElementById("registerMessage");
+      message.classList.remove("show");
+      loading.classList.add("show");
+
+      const username = document.getElementById("regUsername").value;
+      const full_name = document.getElementById("regFullName").value;
       const email = document.getElementById("regEmail").value;
       const password = document.getElementById("regPassword").value;
-      const username = document.getElementById("regUser").value;
-      const full_name = document.getElementById("regFull").value;
 
       try {
-        const res = await fetch("http://localhost:3000/signup", {
+        const res = await fetch(`${API_URL}/signup`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({username, full_name, email, password, role: "user" }),
+          body: JSON.stringify({ username, full_name, email, password, role: "standard" }),
         });
 
         const data = await res.json();
+        loading.classList.remove("show");
 
         if (res.ok && data.success) {
-          regMessage.textContent = "Registration successful! You can now login.";
-          regMessage.className = "message success";
+          message.textContent = "Account created! You can now sign in.";
+          message.className = "message success show";
+
+          document.getElementById("registerForm").reset();
+
+          setTimeout(() => {
+            registerCard.classList.remove("active");
+            loginCard.classList.add("active");
+            toggleText.innerHTML = 'Don\'t have an account? <a id="toggleLink">Sign Up</a>';
+          }, 2000);
         } else {
-          regMessage.textContent = "Registration failed: " + (data.message || "Unknown error");
-          regMessage.className = "message error";
+          message.textContent = data.message || "Registration failed";
+          message.className = "message error show";
         }
-      } catch(err) {
+      } catch (err) {
+        loading.classList.remove("show");
+        message.textContent = "Connection error. Please try again.";
+        message.className = "message error show";
         console.error(err);
-        regMessage.textContent = "Error connecting to server.";
-        regMessage.className = "message error";
       }
     });
-
-
-
-
-
   </script>
 </body>
+
 </html>

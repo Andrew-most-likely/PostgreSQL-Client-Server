@@ -281,7 +281,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <h1>Secure Bank - Admin</h1>
+        <h1>🔒 Secure Bank - Admin</h1>
         <div class="user-info">
             <span class="badge">ADMIN</span>
             <span id="userName"></span>
@@ -292,7 +292,7 @@
     <div class="container">
         <div class="welcome">
             <h2>Admin Dashboard</h2>
-            <p>System overview and management</p>
+            <p>System overview and management - Full access to all accounts and users</p>
         </div>
 
         <div class="stats-grid">
@@ -315,67 +315,118 @@
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="showTab('users')">Users</button>
-            <button class="tab" onclick="showTab('accounts')">Accounts</button>
-            <button class="tab" onclick="showTab('transactions')">Transactions</button>
-            <button class="tab" onclick="showTab('analytics')">Analytics</button>
-            <button class="tab" onclick="showTab('json')">JSON API</button>
+            <button class="tab active" onclick="showTab('users')">All Users</button>
+            <button class="tab" onclick="showTab('accounts')">All Accounts</button>
+            <button class="tab" onclick="showTab('transactions')">All Transactions</button>
+            <button class="tab" onclick="showTab('analytics')">System Analytics</button>
         </div>
 
         <div class="tab-content active" id="usersTab">
-            <div id="usersLoading" class="loading">Loading users...</div>
+            <div id="usersLoading" class="loading">Loading all users...</div>
             <div id="usersError" class="error" style="display:none;"></div>
             <div id="usersContent"></div>
         </div>
 
         <div class="tab-content" id="accountsTab">
-            <div id="accountsLoading" class="loading">Loading accounts...</div>
+            <div id="accountsLoading" class="loading">Loading all accounts...</div>
             <div id="accountsError" class="error" style="display:none;"></div>
             <div id="accountsContent"></div>
         </div>
 
         <div class="tab-content" id="transactionsTab">
-            <div id="transactionsLoading" class="loading">Loading transactions...</div>
+            <div id="transactionsLoading" class="loading">Loading all transactions...</div>
             <div id="transactionsError" class="error" style="display:none;"></div>
             <div id="transactionsContent"></div>
         </div>
 
         <div class="tab-content" id="analyticsTab">
-            <div id="analyticsLoading" class="loading">Loading analytics...</div>
+            <div id="analyticsLoading" class="loading">Loading system analytics...</div>
             <div id="analyticsError" class="error" style="display:none;"></div>
             <div id="analyticsContent"></div>
-        </div>
-
-        <div class="tab-content" id="jsonTab">
-            <div id="jsonLoading" class="loading">Loading JSON data...</div>
-            <div id="jsonError" class="error" style="display:none;"></div>
-            <div id="jsonContent"></div>
         </div>
     </div>
 
     <script>
         const API_URL = "http://localhost:3000";
+        let authToken = null;
         let currentUser = null;
 
+        /*
+         * ADMIN SECURITY MODEL:
+         * 
+         * 1. Role-Based Access Control (RBAC):
+         *    - Backend validates JWT token contains role='admin'
+         *    - Admin endpoints return 403 Forbidden if role != 'admin'
+         *    - Role is stored in signed JWT token (cannot be tampered with)
+         * 
+         * 2. Admin Privileges:
+         *    - Can view ALL users, accounts, and transactions
+         *    - SQL queries have NO user_id restrictions for admins
+         *    - Example: SELECT * FROM accounts (no WHERE user_id clause)
+         * 
+         * 3. Separation of Endpoints:
+         *    - User endpoints: /api/user/* (filtered by user_id from token)
+         *    - Admin endpoints: /api/admin/* (requires admin role, no filtering)
+         *    - Backend middleware validates role before processing request
+         * 
+         * 4. Frontend Cannot Bypass:
+         *    - Even if user modifies localStorage to set role='admin'
+         *    - Backend validates the cryptographically signed JWT token
+         *    - Only the server can issue valid admin tokens
+         */
+
+        // Check authentication and admin role
         function checkAuth() {
+            authToken = localStorage.getItem("authToken");
             const userStr = localStorage.getItem("user");
-            if (!userStr) {
+            
+            if (!authToken || !userStr) {
                 window.location.href = "index.html";
                 return null;
             }
+            
             const user = JSON.parse(userStr);
+            
+            // Frontend check (convenience only - real check is on backend)
             if (user.role !== 'admin') {
                 window.location.href = "dashboard.html";
                 return null;
             }
+            
             return user;
         }
 
+        // Logout
         function logout() {
+            localStorage.removeItem("authToken");
             localStorage.removeItem("user");
             window.location.href = "index.html";
         }
 
+        // Make authenticated API request
+        async function authenticatedFetch(url, options = {}) {
+            const headers = {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
+
+            // Handle unauthorized/forbidden
+            if (response.status === 401 || response.status === 403) {
+                alert('Access denied. Admin privileges required.');
+                logout();
+                return null;
+            }
+
+            return response;
+        }
+
+        // Tab switching
         function showTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -387,46 +438,40 @@
             else if (tabName === 'accounts') loadAccounts();
             else if (tabName === 'transactions') loadTransactions();
             else if (tabName === 'analytics') loadAnalytics();
-            else if (tabName === 'json') loadJSONData();
         }
 
+        // Load system statistics (admin only)
         async function loadStats() {
             try {
-                const res = await fetch(`${API_URL}/api/data/sample`, {
-                    headers: { 'X-User-Id': currentUser.id }
-                });
+                // Admin endpoint - returns stats for entire system
+                const res = await authenticatedFetch(`${API_URL}/api/admin/stats`);
+                if (!res) return;
+                
                 const data = await res.json();
                 
                 if (data.success) {
-                    document.getElementById('totalUsers').textContent = data.data.statistics.totalUsers;
-                    document.getElementById('totalAccounts').textContent = data.data.statistics.activeAccounts;
-                    document.getElementById('totalTransactions').textContent = data.data.statistics.totalTransactions;
-                    
-                    const accountsRes = await fetch(`${API_URL}/api/accounts`, {
-                        headers: { 'X-User-Id': currentUser.id }
-                    });
-                    const accountsData = await accountsRes.json();
-                    if (accountsData.success) {
-                        const active = accountsData.accounts.filter(a => a.status === 'active').length;
-                        document.getElementById('activeAccounts').textContent = active;
-                    }
+                    document.getElementById('totalUsers').textContent = data.stats.totalUsers;
+                    document.getElementById('totalAccounts').textContent = data.stats.totalAccounts;
+                    document.getElementById('totalTransactions').textContent = data.stats.totalTransactions;
+                    document.getElementById('activeAccounts').textContent = data.stats.activeAccounts;
                 }
             } catch (err) {
                 console.error('Failed to load stats:', err);
             }
         }
 
+        // Load ALL users (admin only)
+        // Backend query: SELECT * FROM users (no user_id filter)
         async function loadUsers() {
             document.getElementById('usersLoading').style.display = 'block';
             document.getElementById('usersContent').innerHTML = '';
             document.getElementById('usersError').style.display = 'none';
 
             try {
-                const res = await fetch(`${API_URL}/api/users`, {
-                    headers: { 'X-User-Id': currentUser.id }
-                });
-                const data = await res.json();
+                const res = await authenticatedFetch(`${API_URL}/api/admin/users`);
+                if (!res) return;
                 
+                const data = await res.json();
                 document.getElementById('usersLoading').style.display = 'none';
 
                 if (data.success) {
@@ -465,17 +510,18 @@
             }
         }
 
+        // Load ALL accounts (admin only)
+        // Backend query: SELECT * FROM accounts JOIN users ON accounts.user_id = users.id
         async function loadAccounts() {
             document.getElementById('accountsLoading').style.display = 'block';
             document.getElementById('accountsContent').innerHTML = '';
             document.getElementById('accountsError').style.display = 'none';
 
             try {
-                const res = await fetch(`${API_URL}/api/accounts`, {
-                    headers: { 'X-User-Id': currentUser.id }
-                });
-                const data = await res.json();
+                const res = await authenticatedFetch(`${API_URL}/api/admin/accounts`);
+                if (!res) return;
                 
+                const data = await res.json();
                 document.getElementById('accountsLoading').style.display = 'none';
 
                 if (data.success) {
@@ -486,6 +532,7 @@
                                     <th>Account ID</th>
                                     <th>Account Number</th>
                                     <th>Owner</th>
+                                    <th>Username</th>
                                     <th>Balance</th>
                                     <th>Status</th>
                                 </tr>
@@ -495,7 +542,8 @@
                                     <tr>
                                         <td>${a.account_id}</td>
                                         <td style="font-family: monospace; font-weight: 600;">${a.account_number}</td>
-                                        <td>${a.full_name} (@${a.username})</td>
+                                        <td>${a.full_name}</td>
+                                        <td>@${a.username}</td>
                                         <td style="font-weight: 600; color: #48bb78;">$${parseFloat(a.balance).toFixed(2)}</td>
                                         <td><span class="status ${a.status}">${a.status}</span></td>
                                     </tr>
@@ -512,17 +560,18 @@
             }
         }
 
+        // Load ALL transactions (admin only)
+        // Backend query: SELECT * FROM transactions JOIN accounts JOIN users
         async function loadTransactions() {
             document.getElementById('transactionsLoading').style.display = 'block';
             document.getElementById('transactionsContent').innerHTML = '';
             document.getElementById('transactionsError').style.display = 'none';
 
             try {
-                const res = await fetch(`${API_URL}/api/transactions`, {
-                    headers: { 'X-User-Id': currentUser.id }
-                });
-                const data = await res.json();
+                const res = await authenticatedFetch(`${API_URL}/api/admin/transactions`);
+                if (!res) return;
                 
+                const data = await res.json();
                 document.getElementById('transactionsLoading').style.display = 'none';
 
                 if (data.success) {
@@ -563,17 +612,17 @@
             }
         }
 
+        // Load system-wide analytics (admin only)
         async function loadAnalytics() {
             document.getElementById('analyticsLoading').style.display = 'block';
             document.getElementById('analyticsContent').innerHTML = '';
             document.getElementById('analyticsError').style.display = 'none';
 
             try {
-                const res = await fetch(`${API_URL}/api/analytics/transactions`, {
-                    headers: { 'X-User-Id': currentUser.id }
-                });
-                const data = await res.json();
+                const res = await authenticatedFetch(`${API_URL}/api/admin/analytics`);
+                if (!res) return;
                 
+                const data = await res.json();
                 document.getElementById('analyticsLoading').style.display = 'none';
 
                 if (data.success) {
@@ -592,16 +641,21 @@
                                 <h3>Total Withdrawals</h3>
                                 <div class="value" style="color: #f56565;">$${analytics.totalWithdrawals.toFixed(2)}</div>
                             </div>
+                            <div class="stat-card">
+                                <h3>Net Flow</h3>
+                                <div class="value" style="color: #667eea;">$${(analytics.totalDeposits - analytics.totalWithdrawals).toFixed(2)}</div>
+                            </div>
                         </div>
 
                         <div class="card">
-                            <h3>Transaction Breakdown</h3>
+                            <h3>📊 Transaction Breakdown by Type</h3>
                             <table>
                                 <thead>
                                     <tr>
                                         <th>Type</th>
                                         <th>Count</th>
                                         <th>Total Amount</th>
+                                        <th>Average Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -610,6 +664,7 @@
                                             <td><span class="transaction-type ${t.transaction_type}">${t.transaction_type}</span></td>
                                             <td>${t.count}</td>
                                             <td>$${parseFloat(t.total_amount).toFixed(2)}</td>
+                                            <td>$${(parseFloat(t.total_amount) / t.count).toFixed(2)}</td>
                                         </tr>
                                     `).join('')}
                                 </tbody>
@@ -617,7 +672,7 @@
                         </div>
 
                         <div class="card">
-                            <h3>Recent Transactions</h3>
+                            <h3>🕒 Recent System Activity</h3>
                             <table>
                                 <thead>
                                     <tr>
@@ -651,36 +706,7 @@
             }
         }
 
-        async function loadJSONData() {
-            document.getElementById('jsonLoading').style.display = 'block';
-            document.getElementById('jsonContent').innerHTML = '';
-            document.getElementById('jsonError').style.display = 'none';
-
-            try {
-                const res = await fetch(`${API_URL}/api/data/sample`, {
-                    headers: { 'X-User-Id': currentUser.id }
-                });
-                const data = await res.json();
-                
-                document.getElementById('jsonLoading').style.display = 'none';
-
-                if (data.success) {
-                    document.getElementById('jsonContent').innerHTML = `
-                        <div class="card">
-                            <h3>🔒 Secure JSON API Response</h3>
-                            <p style="color: #718096; margin-bottom: 16px;">This endpoint is protected and only accessible to authenticated users.</p>
-                            <pre>${JSON.stringify(data.data, null, 2)}</pre>
-                        </div>
-                    `;
-                }
-            } catch (err) {
-                document.getElementById('jsonLoading').style.display = 'none';
-                document.getElementById('jsonError').textContent = 'Failed to load JSON data';
-                document.getElementById('jsonError').style.display = 'block';
-                console.error(err);
-            }
-        }
-
+        // Initialize
         currentUser = checkAuth();
         if (currentUser) {
             document.getElementById('userName').textContent = currentUser.full_name;

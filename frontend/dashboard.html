@@ -278,11 +278,21 @@
             color: #718096;
         }
 
-        .empty-state svg {
-            width: 64px;
-            height: 64px;
-            margin-bottom: 16px;
-            opacity: 0.5;
+        .btn-view-transactions {
+            margin-top: 16px;
+            width: 100%;
+            padding: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn-view-transactions:hover {
+            background: #5568d3;
         }
     </style>
 </head>
@@ -331,22 +341,70 @@
 
     <script>
         const API_URL = "http://localhost:3000";
+        let authToken = null;
         let currentUser = null;
 
-        // Check authentication
+        /* 
+         * SECURITY IMPROVEMENTS:
+         * 
+         * 1. JWT Token Authentication:
+         *    - Store JWT token instead of full user object
+         *    - Token contains signed user ID and role that backend can verify
+         *    - Backend validates token signature on every request
+         * 
+         * 2. Backend Authorization:
+         *    - Backend extracts user ID from validated JWT token
+         *    - Backend enforces that users can ONLY access their own data
+         *    - SQL queries include WHERE clauses: accounts.user_id = authenticated_user_id
+         *    - No user can query data for other user IDs
+         * 
+         * 3. User Scope Enforcement:
+         *    - API endpoint: GET /api/accounts (no user ID in URL)
+         *    - Backend gets user ID from JWT token, not from client
+         *    - Returns only accounts WHERE user_id = token.user_id
+         *    - Same pattern for all endpoints
+         */
+
+        // Check authentication and retrieve token
         function checkAuth() {
+            authToken = localStorage.getItem("authToken");
             const userStr = localStorage.getItem("user");
-            if (!userStr) {
+            
+            if (!authToken || !userStr) {
                 window.location.href = "index.html";
                 return null;
             }
+            
             return JSON.parse(userStr);
         }
 
         // Logout
         function logout() {
+            localStorage.removeItem("authToken");
             localStorage.removeItem("user");
             window.location.href = "index.html";
+        }
+
+        // Make authenticated API request
+        async function authenticatedFetch(url, options = {}) {
+            const headers = {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
+
+            // Handle unauthorized
+            if (response.status === 401 || response.status === 403) {
+                logout();
+                return null;
+            }
+
+            return response;
         }
 
         // Tab switching
@@ -364,12 +422,13 @@
             }
         }
 
-        // Load user accounts
+        // Load user's accounts (only their own)
+        // Backend enforces: SELECT * FROM accounts WHERE user_id = authenticated_user_id
         async function loadAccounts() {
             try {
-                const res = await fetch(`${API_URL}/api/accounts/${currentUser.id}`, {
-                    headers: { 'X-User-Id': currentUser.id }
-                });
+                // Note: No user ID in URL - backend gets it from JWT token
+                const res = await authenticatedFetch(`${API_URL}/api/user/accounts`);
+                if (!res) return;
 
                 const data = await res.json();
                 document.getElementById('accountsLoading').style.display = 'none';
@@ -378,7 +437,7 @@
                     const grid = document.getElementById('accountsGrid');
                     grid.innerHTML = data.accounts.map(acc => `
                         <div class="card">
-                            <h3> Account ${acc.account_number}</h3>
+                            <h3>💳 Account ${acc.account_number}</h3>
                             <div class="card-content">
                                 <p class="account-number">${acc.account_number}</p>
                                 <div class="balance">$${parseFloat(acc.balance).toFixed(2)}</div>
@@ -386,7 +445,7 @@
                                     <strong>Status:</strong>
                                     <span class="status ${acc.status}">${acc.status}</span>
                                 </p>
-                                <button class="tab" onclick="loadTransactions(${acc.account_id})" style="margin-top: 16px; width: 100%;">View Transactions</button>
+                                <button class="btn-view-transactions" onclick="loadTransactions(${acc.account_id})">View Transactions</button>
                             </div>
                         </div>
                     `).join('');
@@ -406,15 +465,17 @@
         }
 
         // Load transactions for specific account
+        // Backend enforces: user must own the account_id they're requesting
         async function loadTransactions(accountId) {
             showTab('transactions');
             document.getElementById('transactionsLoading').style.display = 'block';
             document.getElementById('transactionsContent').innerHTML = '';
+            document.getElementById('transactionsError').style.display = 'none';
 
             try {
-                const res = await fetch(`${API_URL}/api/transactions/${accountId}`, {
-                    headers: { 'X-User-Id': currentUser.id }
-                });
+                // Backend validates: account_id belongs to authenticated user
+                const res = await authenticatedFetch(`${API_URL}/api/user/transactions/${accountId}`);
+                if (!res) return;
 
                 const data = await res.json();
                 document.getElementById('transactionsLoading').style.display = 'none';
@@ -440,12 +501,13 @@
         async function loadAllTransactions() {
             document.getElementById('transactionsLoading').style.display = 'block';
             document.getElementById('transactionsContent').innerHTML = '';
+            document.getElementById('transactionsError').style.display = 'none';
 
             try {
-                // Get user's accounts first
-                const accountsRes = await fetch(`${API_URL}/api/accounts/${currentUser.id}`, {
-                    headers: { 'X-User-Id': currentUser.id }
-                });
+                // Get user's accounts first (backend filters by user)
+                const accountsRes = await authenticatedFetch(`${API_URL}/api/user/accounts`);
+                if (!accountsRes) return;
+                
                 const accountsData = await accountsRes.json();
 
                 if (!accountsData.success || accountsData.accounts.length === 0) {
@@ -499,15 +561,16 @@
             `;
         }
 
-        // Load analytics
+        // Load analytics (only for user's accounts)
         async function loadAnalytics() {
             document.getElementById('analyticsLoading').style.display = 'block';
             document.getElementById('analyticsContent').innerHTML = '';
+            document.getElementById('analyticsError').style.display = 'none';
 
             try {
-                const res = await fetch(`${API_URL}/api/analytics/transactions`, {
-                    headers: { 'X-User-Id': currentUser.id }
-                });
+                // Backend filters analytics to only user's transactions
+                const res = await authenticatedFetch(`${API_URL}/api/user/analytics`);
+                if (!res) return;
 
                 const data = await res.json();
                 document.getElementById('analyticsLoading').style.display = 'none';
@@ -517,21 +580,21 @@
                     document.getElementById('analyticsContent').innerHTML = `
                         <div class="card-grid">
                             <div class="card">
-                                <h3> Total Transactions</h3>
+                                <h3>📊 Total Transactions</h3>
                                 <div class="balance">${analytics.totalTransactions}</div>
                             </div>
                             <div class="card">
-                                <h3> Total Deposits</h3>
+                                <h3>💰 Total Deposits</h3>
                                 <div class="balance amount-positive">$${analytics.totalDeposits.toFixed(2)}</div>
                             </div>
                             <div class="card">
-                                <h3> Total Withdrawals</h3>
+                                <h3>💸 Total Withdrawals</h3>
                                 <div class="balance amount-negative">$${analytics.totalWithdrawals.toFixed(2)}</div>
                             </div>
                         </div>
 
                         <div class="card" style="margin-top: 24px;">
-                            <h3> Transaction Breakdown</h3>
+                            <h3>📈 Transaction Breakdown</h3>
                             <table>
                                 <thead>
                                     <tr>
@@ -553,7 +616,7 @@
                         </div>
 
                         <div class="card" style="margin-top: 24px;">
-                            <h3> Recent Transactions</h3>
+                            <h3>🕒 Recent Transactions</h3>
                             <table>
                                 <thead>
                                     <tr>

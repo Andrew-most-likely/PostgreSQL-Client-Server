@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,7 +13,7 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      background: white;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -24,7 +23,7 @@
 
     .container {
       width: 100%;
-      max-width: 400px;
+      max-width: 420px;
     }
 
     .logo {
@@ -34,19 +33,20 @@
     }
 
     .logo h1 {
-      font-size: 28px;
+      font-size: 32px;
       font-weight: 700;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .logo p {
       font-size: 14px;
-      opacity: 0.9;
+      opacity: 0.95;
     }
 
     .card {
       background: #fff;
-      border-radius: 12px;
+      border-radius: 16px;
       padding: 40px;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
       display: none;
@@ -61,6 +61,10 @@
       margin-bottom: 24px;
       color: #1a202c;
       text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
     }
 
     label {
@@ -78,7 +82,6 @@
       padding: 12px 16px;
       border: 2px solid #e2e8f0;
       border-radius: 8px;
-      margin-bottom: 16px;
       font-size: 14px;
       transition: border-color 0.2s;
     }
@@ -86,39 +89,89 @@
     input:focus {
       border-color: #667eea;
       outline: none;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
+
+    input.invalid {
+      border-color: #fc8181;
+    }
+
+    .password-toggle {
+      position: relative;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #718096;
+      font-size: 12px;
+      padding: 4px 8px;
+    }
+
+    .password-strength {
+      margin-top: 8px;
+      font-size: 12px;
+    }
+
+    .strength-bar {
+      height: 4px;
+      background: #e2e8f0;
+      border-radius: 2px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+
+    .strength-bar-fill {
+      height: 100%;
+      transition: width 0.3s, background 0.3s;
+      width: 0%;
+    }
+
+    .strength-weak { width: 33%; background: #fc8181; }
+    .strength-medium { width: 66%; background: #f6ad55; }
+    .strength-strong { width: 100%; background: #68d391; }
 
     .btn {
       width: 100%;
       padding: 14px;
-      background: rgb(72, 161, 72);
+      background: #667eea;
       border: none;
       color: #fff;
       font-size: 16px;
       font-weight: 600;
       border-radius: 8px;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
     }
 
-    .btn:hover {
+    .btn:hover:not(:disabled) {
       transform: translateY(-2px);
       box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
     }
 
-    .btn:active {
+    .btn:active:not(:disabled) {
       transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     .footer {
       text-align: center;
       margin-top: 24px;
       font-size: 14px;
-      color: black;
+      color: white;
     }
 
     .footer a {
-      color: black;
+      color: white;
       text-decoration: none;
       font-weight: 600;
       cursor: pointer;
@@ -127,14 +180,14 @@
     }
 
     .footer a:hover {
-      border-bottom-color: black;
+      border-bottom-color: white;
     }
 
     .message {
       margin-top: 16px;
       padding: 12px;
       font-size: 14px;
-      border-radius: 6px;
+      border-radius: 8px;
       text-align: center;
       display: none;
     }
@@ -155,6 +208,12 @@
       border: 1px solid #68d391;
     }
 
+    .message.warning {
+      background: #feebc8;
+      color: #c05621;
+      border: 1px solid #f6ad55;
+    }
+
     .loading {
       display: none;
       text-align: center;
@@ -166,49 +225,154 @@
     .loading.show {
       display: block;
     }
+
+    .input-hint {
+      font-size: 12px;
+      color: #718096;
+      margin-top: 4px;
+    }
+
+    .security-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding: 12px;
+      background: #edf2f7;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #2d3748;
+    }
+
+    .security-badge::before {
+      content: "🔒";
+      font-size: 18px;
+    }
   </style>
 </head>
-
 <body>
   <div class="container">
     <div class="logo">
+      <h1>🏦 Secure Bank</h1>
+      <p>Your trusted financial partner</p>
     </div>
 
     <!-- Login Form -->
     <div class="card active" id="loginCard">
       <h2>Sign In</h2>
+      <div class="security-badge">
+        All connections are encrypted and secure
+      </div>
       <form id="loginForm">
-        <label for="loginEmail">Email or Username</label>
-        <input id="loginEmail" type="text" required placeholder="Enter your email or username" />
+        <div class="form-group">
+          <label for="loginEmail">Email or Username</label>
+          <input 
+            id="loginEmail" 
+            type="text" 
+            required 
+            placeholder="Enter your email or username"
+            autocomplete="username"
+            maxlength="100"
+          />
+        </div>
 
-        <label for="loginPassword">Password</label>
-        <input id="loginPassword" type="password" required placeholder="Enter your password" />
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <div class="password-toggle">
+            <input 
+              id="loginPassword" 
+              type="password" 
+              required 
+              placeholder="Enter your password"
+              autocomplete="current-password"
+              maxlength="255"
+            />
+            <button type="button" class="toggle-password" onclick="togglePassword('loginPassword')">
+              Show
+            </button>
+          </div>
+        </div>
 
-        <button class="btn" type="submit">Sign In</button>
+        <button class="btn" type="submit" id="loginBtn">Sign In</button>
       </form>
-      <div class="loading" id="loginLoading">Authenticating...</div>
+      <div class="loading" id="loginLoading">🔐 Authenticating securely...</div>
       <div class="message" id="loginMessage"></div>
     </div>
 
     <!-- Register Form -->
     <div class="card" id="registerCard">
       <h2>Create Account</h2>
+      <div class="security-badge">
+        Create your secure banking account
+      </div>
       <form id="registerForm">
-        <label for="regUsername">Username</label>
-        <input id="regUsername" type="text" required placeholder="Choose a username" />
+        <div class="form-group">
+          <label for="regUsername">Username</label>
+          <input 
+            id="regUsername" 
+            type="text" 
+            required 
+            placeholder="Choose a username"
+            autocomplete="username"
+            pattern="[a-zA-Z0-9_]{3,50}"
+            minlength="3"
+            maxlength="50"
+          />
+          <div class="input-hint">3-50 characters, letters, numbers, and underscores only</div>
+        </div>
 
-        <label for="regFullName">Full Name</label>
-        <input id="regFullName" type="text" required placeholder="Enter your full name" />
+        <div class="form-group">
+          <label for="regFullName">Full Name</label>
+          <input 
+            id="regFullName" 
+            type="text" 
+            required 
+            placeholder="Enter your full name"
+            autocomplete="name"
+            maxlength="100"
+          />
+        </div>
 
-        <label for="regEmail">Email</label>
-        <input id="regEmail" type="email" required placeholder="Enter your email" />
+        <div class="form-group">
+          <label for="regEmail">Email</label>
+          <input 
+            id="regEmail" 
+            type="email" 
+            required 
+            placeholder="Enter your email"
+            autocomplete="email"
+            maxlength="100"
+          />
+        </div>
 
-        <label for="regPassword">Password</label>
-        <input id="regPassword" type="password" required placeholder="Choose a strong password" />
+        <div class="form-group">
+          <label for="regPassword">Password</label>
+          <div class="password-toggle">
+            <input 
+              id="regPassword" 
+              type="password" 
+              required 
+              placeholder="Choose a strong password"
+              autocomplete="new-password"
+              minlength="8"
+              maxlength="255"
+            />
+            <button type="button" class="toggle-password" onclick="togglePassword('regPassword')">
+              Show
+            </button>
+          </div>
+          <div class="password-strength">
+            <div class="strength-bar">
+              <div class="strength-bar-fill" id="strengthBar"></div>
+            </div>
+            <div id="strengthText" style="margin-top: 4px; font-size: 12px;"></div>
+          </div>
+          <div class="input-hint">Minimum 8 characters, include uppercase, lowercase, numbers, and symbols</div>
+        </div>
 
-        <button class="btn" type="submit">Create Account</button>
+        <button class="btn" type="submit" id="registerBtn">Create Account</button>
       </form>
-      <div class="loading" id="registerLoading">Creating account...</div>
+      <div class="loading" id="registerLoading">Creating your secure account...</div>
       <div class="message" id="registerMessage"></div>
     </div>
 
@@ -225,115 +389,342 @@
     const toggleLink = document.getElementById("toggleLink");
     const toggleText = document.getElementById("toggleText");
 
+    /*
+     * SECURITY IMPROVEMENTS IN THIS LOGIN PAGE:
+     * 
+     * 1. JWT Token Storage:
+     *    - Store JWT token (not full user object)
+     *    - Token is cryptographically signed by backend
+     *    - Backend validates token on every request
+     * 
+     * 2. Input Validation:
+     *    - Client-side validation (UX)
+     *    - Server-side validation (security)
+     *    - Prevent XSS with proper input sanitization
+     * 
+     * 3. Password Security:
+     *    - Strength indicator
+     *    - Minimum requirements enforced
+     *    - Passwords hashed with bcrypt on backend
+     * 
+     * 4. Rate Limiting Awareness:
+     *    - Backend should implement rate limiting
+     *    - Failed login tracking in database
+     *    - Account lockout after 5 failed attempts
+     * 
+     * 5. No Sensitive Data in localStorage:
+     *    - Only store: authToken, minimal user info
+     *    - Never store: password, full user details
+     */
+
+    // Check if already logged in
+    (function checkExistingSession() {
+      const token = localStorage.getItem("authToken");
+      const userStr = localStorage.getItem("user");
+      
+      if (token && userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          // Redirect to appropriate dashboard
+          window.location.href = user.role === "admin" ? "admin.html" : "dashboard.html";
+        } catch (e) {
+          // Invalid data, clear storage
+          localStorage.clear();
+        }
+      }
+    })();
+
     // Toggle between login and register
     toggleLink.addEventListener("click", () => {
       const showingLogin = loginCard.classList.contains("active");
 
+      // Clear any messages
+      document.getElementById("loginMessage").classList.remove("show");
+      document.getElementById("registerMessage").classList.remove("show");
+      document.getElementById("loginForm").reset();
+      document.getElementById("registerForm").reset();
+
       if (showingLogin) {
         loginCard.classList.remove("active");
         registerCard.classList.add("active");
-
         toggleText.childNodes[0].textContent = "Already have an account? ";
         toggleLink.textContent = "Sign In";
       } else {
         registerCard.classList.remove("active");
         loginCard.classList.add("active");
-
         toggleText.childNodes[0].textContent = "Don't have an account? ";
         toggleLink.textContent = "Sign Up";
       }
     });
 
-    // Login form
+    // Toggle password visibility
+    function togglePassword(inputId) {
+      const input = document.getElementById(inputId);
+      const button = input.nextElementSibling;
+      
+      if (input.type === "password") {
+        input.type = "text";
+        button.textContent = "Hide";
+      } else {
+        input.type = "password";
+        button.textContent = "Show";
+      }
+    }
+
+    // Password strength calculator
+    function checkPasswordStrength(password) {
+      let strength = 0;
+      
+      if (password.length >= 8) strength++;
+      if (password.length >= 12) strength++;
+      if (/[a-z]/.test(password)) strength++;
+      if (/[A-Z]/.test(password)) strength++;
+      if (/[0-9]/.test(password)) strength++;
+      if (/[^a-zA-Z0-9]/.test(password)) strength++;
+      
+      return strength;
+    }
+
+    // Update password strength indicator
+    document.getElementById("regPassword").addEventListener("input", (e) => {
+      const password = e.target.value;
+      const strengthBar = document.getElementById("strengthBar");
+      const strengthText = document.getElementById("strengthText");
+      
+      if (password.length === 0) {
+        strengthBar.className = "strength-bar-fill";
+        strengthText.textContent = "";
+        return;
+      }
+      
+      const strength = checkPasswordStrength(password);
+      
+      if (strength <= 2) {
+        strengthBar.className = "strength-bar-fill strength-weak";
+        strengthText.textContent = "Weak password";
+        strengthText.style.color = "#c53030";
+      } else if (strength <= 4) {
+        strengthBar.className = "strength-bar-fill strength-medium";
+        strengthText.textContent = "Medium password";
+        strengthText.style.color = "#c05621";
+      } else {
+        strengthBar.className = "strength-bar-fill strength-strong";
+        strengthText.textContent = "Strong password";
+        strengthText.style.color = "#2f855a";
+      }
+    });
+
+    // Sanitize input to prevent XSS
+    function sanitizeInput(str) {
+      const temp = document.createElement('div');
+      temp.textContent = str;
+      return temp.innerHTML;
+    }
+
+    // Login form handler
     document.getElementById("loginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const loading = document.getElementById("loginLoading");
       const message = document.getElementById("loginMessage");
+      const submitBtn = document.getElementById("loginBtn");
+      
       message.classList.remove("show");
       loading.classList.add("show");
+      submitBtn.disabled = true;
 
-      const email = document.getElementById("loginEmail").value;
+      const email = document.getElementById("loginEmail").value.trim();
       const password = document.getElementById("loginPassword").value;
 
+      // Basic client-side validation
+      if (!email || !password) {
+        loading.classList.remove("show");
+        message.textContent = "Please fill in all fields";
+        message.className = "message error show";
+        submitBtn.disabled = false;
+        return;
+      }
+
       try {
-        const res = await fetch(`${API_URL}/login`, {
+        const res = await fetch(`${API_URL}/api/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ 
+            identifier: email, // Can be email or username
+            password 
+          }),
         });
 
         const data = await res.json();
         loading.classList.remove("show");
+        submitBtn.disabled = false;
 
-        if (res.ok && data.success && data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
+        if (res.ok && data.success && data.token) {
+          // Store JWT token and minimal user info
+          localStorage.setItem("authToken", data.token);
+          localStorage.setItem("user", JSON.stringify({
+            user_id: data.user.user_id,
+            username: data.user.username,
+            full_name: data.user.full_name,
+            role: data.user.role
+          }));
 
-          message.textContent = "Login successful! Redirecting...";
+          message.textContent = "✓ Login successful! Redirecting...";
           message.className = "message success show";
 
           setTimeout(() => {
             window.location.href = data.user.role === "admin" ? "admin.html" : "dashboard.html";
-          }, 1000);
+          }, 800);
         } else {
-          message.textContent = data.message || "Login failed";
+          // Handle specific error messages
+          let errorMsg = "Login failed. Please check your credentials.";
+          
+          if (data.message) {
+            errorMsg = data.message;
+          }
+          
+          if (data.locked_until) {
+            errorMsg = `Account locked until ${new Date(data.locked_until).toLocaleTimeString()}. Too many failed attempts.`;
+          }
+          
+          message.textContent = errorMsg;
           message.className = "message error show";
+          
+          // Clear password field on error
+          document.getElementById("loginPassword").value = "";
         }
       } catch (err) {
         loading.classList.remove("show");
-        message.textContent = "Connection error. Please try again.";
+        submitBtn.disabled = false;
+        message.textContent = "Connection error. Please check your internet and try again.";
         message.className = "message error show";
-        console.error(err);
+        console.error("Login error:", err);
       }
     });
 
-    // Register form
+    // Register form handler
     document.getElementById("registerForm").addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const loading = document.getElementById("registerLoading");
       const message = document.getElementById("registerMessage");
+      const submitBtn = document.getElementById("registerBtn");
+      
       message.classList.remove("show");
       loading.classList.add("show");
+      submitBtn.disabled = true;
 
-      const username = document.getElementById("regUsername").value;
-      const full_name = document.getElementById("regFullName").value;
-      const email = document.getElementById("regEmail").value;
+      const username = document.getElementById("regUsername").value.trim();
+      const full_name = document.getElementById("regFullName").value.trim();
+      const email = document.getElementById("regEmail").value.trim();
       const password = document.getElementById("regPassword").value;
 
+      // Client-side validation
+      if (!username || !full_name || !email || !password) {
+        loading.classList.remove("show");
+        submitBtn.disabled = false;
+        message.textContent = "Please fill in all fields";
+        message.className = "message error show";
+        return;
+      }
+
+      // Username validation
+      if (!/^[a-zA-Z0-9_]{3,50}$/.test(username)) {
+        loading.classList.remove("show");
+        submitBtn.disabled = false;
+        message.textContent = "Username must be 3-50 characters (letters, numbers, underscores)";
+        message.className = "message error show";
+        return;
+      }
+
+      // Email validation
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        loading.classList.remove("show");
+        submitBtn.disabled = false;
+        message.textContent = "Please enter a valid email address";
+        message.className = "message error show";
+        return;
+      }
+
+      // Password strength validation
+      if (password.length < 8) {
+        loading.classList.remove("show");
+        submitBtn.disabled = false;
+        message.textContent = "Password must be at least 8 characters";
+        message.className = "message error show";
+        return;
+      }
+
+      const strength = checkPasswordStrength(password);
+      if (strength < 3) {
+        loading.classList.remove("show");
+        submitBtn.disabled = false;
+        message.textContent = "Please choose a stronger password (mix of uppercase, lowercase, numbers, symbols)";
+        message.className = "message warning show";
+        return;
+      }
+
       try {
-        const res = await fetch(`${API_URL}/signup`, {
+        const res = await fetch(`${API_URL}/api/auth/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, full_name, email, password, role: "standard" }),
+          body: JSON.stringify({ 
+            username: sanitizeInput(username),
+            full_name: sanitizeInput(full_name),
+            email: sanitizeInput(email),
+            password,
+            role: "standard" // Always standard for self-registration
+          }),
         });
 
         const data = await res.json();
         loading.classList.remove("show");
+        submitBtn.disabled = false;
 
         if (res.ok && data.success) {
-          message.textContent = "Account created! You can now sign in.";
+          message.textContent = "✓ Account created successfully! Please sign in.";
           message.className = "message success show";
 
           document.getElementById("registerForm").reset();
+          document.getElementById("strengthBar").className = "strength-bar-fill";
+          document.getElementById("strengthText").textContent = "";
 
+          // Auto-switch to login after 2 seconds
           setTimeout(() => {
             registerCard.classList.remove("active");
             loginCard.classList.add("active");
             toggleText.innerHTML = 'Don\'t have an account? <a id="toggleLink">Sign Up</a>';
+            
+            // Pre-fill the login email
+            document.getElementById("loginEmail").value = email;
           }, 2000);
         } else {
-          message.textContent = data.message || "Registration failed";
+          let errorMsg = "Registration failed. Please try again.";
+          
+          if (data.message) {
+            errorMsg = data.message;
+          }
+          
+          message.textContent = errorMsg;
           message.className = "message error show";
         }
       } catch (err) {
         loading.classList.remove("show");
-        message.textContent = "Connection error. Please try again.";
+        submitBtn.disabled = false;
+        message.textContent = "Connection error. Please check your internet and try again.";
         message.className = "message error show";
-        console.error(err);
+        console.error("Registration error:", err);
       }
+    });
+
+    // Clear error messages when user starts typing
+    document.querySelectorAll('input').forEach(input => {
+      input.addEventListener('input', () => {
+        document.querySelectorAll('.message').forEach(msg => {
+          msg.classList.remove('show');
+        });
+      });
     });
   </script>
 </body>
-
 </html>

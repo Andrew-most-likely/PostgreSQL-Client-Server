@@ -3,35 +3,39 @@ const express = require("express");
 const { Pool } = require("pg");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
-const fs = require("fs");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: "http://localhost:8080",
+  origin: ["http://localhost:8080", "http://localhost:3000"],
   credentials: true
 }));
 
+// JWT Configuration
+const JWT_SECRET = process.env.JWT_SECRET || 'CHANGE_ME_IN_PRODUCTION_super_secret_key';
+const JWT_EXPIRY = '24h';
+
 // PostgreSQL connection with SSL
 const pool = new Pool({
-  host: process.env.PGHOST,
-  port: process.env.PGPORT,
-  user: process.env.PGUSER,
-  password: process.env.PGPASSWORD,
-  database: process.env.PGDATABASE,
+  host: process.env.PGHOST || 'localhost',
+  port: process.env.PGPORT || 5432,
+  user: process.env.PGUSER || 'app_user',
+  password: process.env.PGPASSWORD || 'AppPass456!',
+  database: process.env.PGDATABASE || 'postgres',
   ssl: process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: false } : false
 });
 
-// Test database connection and log SSL status
+// Test database connection
 pool.connect((err, client, release) => {
   if (err) {
     console.error("❌ Database connection error:", err.stack);
   } else {
-    console.log(" Connected to PostgreSQL database");
+    console.log("✅ Connected to PostgreSQL database");
     client.query("SHOW ssl", (err, result) => {
       release();
       if (!err) {
-        console.log(" SSL Status:", result.rows[0].ssl);
+        console.log("🔒 SSL Status:", result.rows[0].ssl);
       }
     });
   }
@@ -52,20 +56,41 @@ function validatePassword(password) {
 }
 
 // ================== AUTHENTICATION MIDDLEWARE ==================
-function authenticate(req, res, next) {
-  const userId = req.headers['x-user-id'];
-  if (!userId) {
-    return res.status(401).json({ success: false, message: "Authentication required" });
+async function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ success: false, message: "Access token required" });
   }
-  req.userId = parseInt(userId);
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    // Set PostgreSQL session variable for RLS
+    await pool.query('SELECT set_current_user($1)', [decoded.user_id]);
+    
+    req.user = decoded;
+    next();
+  } catch (err) {
+    console.error('Token verification failed:', err.message);
+    return res.status(403).json({ success: false, message: "Invalid or expired token" });
+  }
+}
+
+// Admin-only middleware
+function requireAdmin(req, res, next) {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ success: false, message: "Admin access required" });
+  }
   next();
 }
 
 // ================== AUTH ROUTES ==================
 
-// Signup route
-app.post("/signup", async (req, res) => {
-  const { username, full_name, email, password, role } = req.body;
+// Register new user
+app.post("/api/auth/register", async (req, res) => {
+  const { username, full_name, email, password } = req.body;
 
   // Input validation
   if (!validateUsername(username)) {
@@ -82,39 +107,47 @@ app.post("/signup", async (req, res) => {
   }
 
   try {
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const password_hash = await bcrypt.hash(password, 12);
 
-    await pool.query(
-      `INSERT INTO users (username, email, full_name, password, role)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [username, email, full_name, hashedPassword, role || 'standard']
+    const result = await pool.query(
+      `INSERT INTO users (username, email, full_name, password_hash, role)
+       VALUES ($1, $2, $3, $4, 'standard')
+       RETURNING user_id, username, full_name, email, role`,
+      [username, email, full_name, password_hash]
     );
 
-    res.json({ success: true, message: "User created" });
+    res.status(201).json({ 
+      success: true, 
+      message: "Account created successfully",
+      user: result.rows[0]
+    });
   } catch (err) {
+    console.error('Registration error:', err);
     if (err.code === "23505") {
-      res.status(400).json({ success: false, message: "Username or email already exists" });
-    } else {
-      console.error(err);
-      res.status(500).json({ success: false, message: "Server error" });
+      if (err.constraint === 'users_username_key') {
+        return res.status(409).json({ success: false, message: "Username already taken" });
+      } else if (err.constraint === 'users_email_key') {
+        return res.status(409).json({ success: false, message: "Email already registered" });
+      }
     }
+    res.status(500).json({ success: false, message: "Registration failed" });
   }
 });
 
-// Login route
-app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+// Login
+app.post("/api/auth/login", async (req, res) => {
+  const { identifier, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ success: false, message: "Email and password required" });
+  if (!identifier || !password) {
+    return res.status(400).json({ success: false, message: "Email/username and password required" });
   }
 
   try {
     const result = await pool.query(
-      `SELECT id, username, email, password, role, full_name
+      `SELECT user_id, username, email, password_hash, role, full_name, is_active, locked_until
        FROM users
        WHERE username = $1 OR email = $1`,
-      [email]
+      [identifier]
     );
 
     if (result.rows.length === 0) {
@@ -122,56 +155,72 @@ app.post("/login", async (req, res) => {
     }
 
     const user = result.rows[0];
-    const match = await bcrypt.compare(password, user.password);
+
+    // Check if account is active
+    if (!user.is_active) {
+      return res.status(403).json({ success: false, message: "Account is disabled" });
+    }
+
+    // Check if account is locked
+    if (user.locked_until && new Date(user.locked_until) > new Date()) {
+      return res.status(403).json({
+        success: false,
+        message: "Account locked due to failed login attempts",
+        locked_until: user.locked_until
+      });
+    }
+
+    // Verify password
+    const match = await bcrypt.compare(password, user.password_hash);
     
     if (!match) {
+      await pool.query('SELECT increment_failed_login($1)', [user.username]);
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
-    const { password: pw, ...userData } = user;
-    res.json({ success: true, user: userData });
+    // Reset failed login attempts
+    await pool.query('SELECT reset_failed_login($1)', [user.user_id]);
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        user_id: user.user_id, 
+        username: user.username, 
+        role: user.role 
+      },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRY }
+    );
+
+    res.json({ 
+      success: true, 
+      token,
+      user: {
+        user_id: user.user_id,
+        username: user.username,
+        full_name: user.full_name,
+        email: user.email,
+        role: user.role
+      }
+    });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error('Login error:', err);
+    res.status(500).json({ success: false, message: "Login failed" });
   }
 });
 
 // ================== USER ROUTES ==================
 
-// Get all users (admin only)
-app.get("/api/users", authenticate, async (req, res) => {
+// Get user's own accounts
+app.get("/api/user/accounts", authenticateToken, async (req, res) => {
   try {
+    // RLS automatically filters by user_id
     const result = await pool.query(
-      `SELECT id, username, email, full_name, role, created_at 
-       FROM users 
+      `SELECT account_id, account_number, balance, status, created_at
+       FROM accounts
        ORDER BY created_at DESC`
     );
-    res.json({ success: true, users: result.rows });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-
-// ================== ACCOUNT ROUTES ==================
-
-// Get user's accounts
-app.get("/api/accounts/:userId", authenticate, async (req, res) => {
-  const userId = parseInt(req.params.userId);
-
-  // Validate numeric input
-  if (isNaN(userId)) {
-    return res.status(400).json({ success: false, message: "Invalid user ID" });
-  }
-
-  try {
-    const result = await pool.query(
-      `SELECT account_id, account_number, balance, status 
-       FROM accounts 
-       WHERE id = $1`,
-      [userId]
-    );
     res.json({ success: true, accounts: result.rows });
   } catch (err) {
     console.error(err);
@@ -179,27 +228,8 @@ app.get("/api/accounts/:userId", authenticate, async (req, res) => {
   }
 });
 
-// Get all accounts (admin)
-app.get("/api/accounts", authenticate, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT a.account_id, a.account_number, a.balance, a.status, 
-              u.username, u.full_name
-       FROM accounts a
-       JOIN users u ON a.id = u.id
-       ORDER BY a.account_id`
-    );
-    res.json({ success: true, accounts: result.rows });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-
-// ================== TRANSACTION ROUTES ==================
-
-// Get transactions for an account
-app.get("/api/transactions/:accountId", authenticate, async (req, res) => {
+// Get user's transactions for specific account
+app.get("/api/user/transactions/:accountId", authenticateToken, async (req, res) => {
   const accountId = parseInt(req.params.accountId);
 
   if (isNaN(accountId)) {
@@ -207,8 +237,9 @@ app.get("/api/transactions/:accountId", authenticate, async (req, res) => {
   }
 
   try {
+    // RLS ensures user can only see their own account transactions
     const result = await pool.query(
-      `SELECT transaction_id, transaction_type, amount, transaction_date, description
+      `SELECT transaction_id, transaction_type, amount, transaction_date, description, balance_after
        FROM transactions
        WHERE account_id = $1
        ORDER BY transaction_date DESC`,
@@ -221,89 +252,38 @@ app.get("/api/transactions/:accountId", authenticate, async (req, res) => {
   }
 });
 
-// Get all transactions (admin)
-app.get("/api/transactions", authenticate, async (req, res) => {
+// Get user's analytics
+app.get("/api/user/analytics", authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT t.transaction_id, t.transaction_type, t.amount, 
-              t.transaction_date, t.description,
-              a.account_number, u.username
-       FROM transactions t
-       JOIN accounts a ON t.account_id = a.account_id
-       JOIN users u ON a.id = u.id
-       ORDER BY t.transaction_date DESC
-       LIMIT 100`
+    // RLS filters to user's transactions only
+    const totalResult = await pool.query(
+      `SELECT COUNT(*) as total FROM transactions t
+       JOIN accounts a ON t.account_id = a.account_id`
     );
-    res.json({ success: true, transactions: result.rows });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-
-// ================== JSON API ENDPOINT (Part Two - Part D) ==================
-
-// Secure JSON endpoint - returns sample data (authenticated users only)
-app.get("/api/data/sample", authenticate, async (req, res) => {
-  try {
-    const sampleData = {
-      timestamp: new Date().toISOString(),
-      environment: "secure",
-      status: "operational",
-      statistics: {
-        totalUsers: 0,
-        activeAccounts: 0,
-        totalTransactions: 0
-      }
-    };
-
-    // Get real statistics
-    const userCount = await pool.query("SELECT COUNT(*) FROM users");
-    const accountCount = await pool.query("SELECT COUNT(*) FROM accounts WHERE status = 'active'");
-    const transactionCount = await pool.query("SELECT COUNT(*) FROM transactions");
-
-    sampleData.statistics.totalUsers = parseInt(userCount.rows[0].count);
-    sampleData.statistics.activeAccounts = parseInt(accountCount.rows[0].count);
-    sampleData.statistics.totalTransactions = parseInt(transactionCount.rows[0].count);
-
-    res.json({ success: true, data: sampleData });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-
-// ================== CSV ANALYTICS ENDPOINT (Part Two - Part E) ==================
-
-// CSV analytics - secure transaction analytics (authenticated users only)
-app.get("/api/analytics/transactions", authenticate, async (req, res) => {
-  try {
-    // Total transactions
-    const totalResult = await pool.query("SELECT COUNT(*) as total FROM transactions");
     
-    // Total deposit volume
     const depositResult = await pool.query(
-      "SELECT SUM(amount) as total_deposits FROM transactions WHERE transaction_type = 'deposit'"
+      `SELECT COALESCE(SUM(amount), 0) as total_deposits FROM transactions t
+       JOIN accounts a ON t.account_id = a.account_id
+       WHERE transaction_type = 'deposit'`
     );
     
-    // Total withdrawal volume
     const withdrawalResult = await pool.query(
-      "SELECT SUM(amount) as total_withdrawals FROM transactions WHERE transaction_type = 'withdrawal'"
+      `SELECT COALESCE(SUM(amount), 0) as total_withdrawals FROM transactions t
+       JOIN accounts a ON t.account_id = a.account_id
+       WHERE transaction_type = 'withdrawal'`
     );
     
-    // Transactions by type
     const typeResult = await pool.query(
       `SELECT transaction_type, COUNT(*) as count, SUM(amount) as total_amount
-       FROM transactions
+       FROM transactions t
+       JOIN accounts a ON t.account_id = a.account_id
        GROUP BY transaction_type`
     );
 
-    // Recent transactions (last 10)
     const recentResult = await pool.query(
-      `SELECT t.*, a.account_number, u.username
+      `SELECT t.*, a.account_number
        FROM transactions t
        JOIN accounts a ON t.account_id = a.account_id
-       JOIN users u ON a.id = u.id
        ORDER BY t.transaction_date DESC
        LIMIT 10`
     );
@@ -323,16 +303,154 @@ app.get("/api/analytics/transactions", authenticate, async (req, res) => {
   }
 });
 
+// ================== ADMIN ROUTES ==================
+
+// Get all users (admin only)
+app.get("/api/admin/users", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT user_id, username, email, full_name, role, is_active, created_at 
+       FROM users 
+       ORDER BY created_at DESC`
+    );
+    res.json({ success: true, users: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Get all accounts (admin only)
+app.get("/api/admin/accounts", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT a.account_id, a.account_number, a.balance, a.status, 
+              u.username, u.full_name, a.created_at
+       FROM accounts a
+       JOIN users u ON a.user_id = u.user_id
+       ORDER BY a.created_at DESC`
+    );
+    res.json({ success: true, accounts: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Get all transactions (admin only)
+app.get("/api/admin/transactions", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT t.transaction_id, t.transaction_type, t.amount, 
+              t.transaction_date, t.description, t.balance_after,
+              a.account_number, u.username
+       FROM transactions t
+       JOIN accounts a ON t.account_id = a.account_id
+       JOIN users u ON a.user_id = u.user_id
+       ORDER BY t.transaction_date DESC
+       LIMIT 100`
+    );
+    res.json({ success: true, transactions: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Get system statistics (admin only)
+app.get("/api/admin/stats", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const userCount = await pool.query("SELECT COUNT(*) FROM users");
+    const accountCount = await pool.query("SELECT COUNT(*) FROM accounts");
+    const activeAccountCount = await pool.query("SELECT COUNT(*) FROM accounts WHERE status = 'active'");
+    const transactionCount = await pool.query("SELECT COUNT(*) FROM transactions");
+
+    res.json({
+      success: true,
+      stats: {
+        totalUsers: parseInt(userCount.rows[0].count),
+        totalAccounts: parseInt(accountCount.rows[0].count),
+        activeAccounts: parseInt(activeAccountCount.rows[0].count),
+        totalTransactions: parseInt(transactionCount.rows[0].count)
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Get system-wide analytics (admin only)
+app.get("/api/admin/analytics", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const totalResult = await pool.query("SELECT COUNT(*) as total FROM transactions");
+    
+    const depositResult = await pool.query(
+      "SELECT COALESCE(SUM(amount), 0) as total_deposits FROM transactions WHERE transaction_type = 'deposit'"
+    );
+    
+    const withdrawalResult = await pool.query(
+      "SELECT COALESCE(SUM(amount), 0) as total_withdrawals FROM transactions WHERE transaction_type = 'withdrawal'"
+    );
+    
+    const typeResult = await pool.query(
+      `SELECT transaction_type, COUNT(*) as count, SUM(amount) as total_amount
+       FROM transactions
+       GROUP BY transaction_type`
+    );
+
+    const recentResult = await pool.query(
+      `SELECT t.*, a.account_number, u.username
+       FROM transactions t
+       JOIN accounts a ON t.account_id = a.account_id
+       JOIN users u ON a.user_id = u.user_id
+       ORDER BY t.transaction_date DESC
+       LIMIT 10`
+    );
+
+    const analytics = {
+      totalTransactions: parseInt(totalResult.rows[0].total),
+      totalDeposits: parseFloat(depositResult.rows[0].total_deposits) || 0,
+      totalWithdrawals: parseFloat(withdrawalResult.rows[0].total_withdrawals) || 0,
+      byType: typeResult.rows,
+      recentTransactions: recentResult.rows
+    };
+
+    res.json({ success: true, analytics });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// ================== LEGACY ROUTES (for backward compatibility) ==================
+
+// Old signup route (redirects to new endpoint)
+app.post("/signup", async (req, res) => {
+  req.url = '/api/auth/register';
+  return app._router.handle(req, res);
+});
+
+// Old login route (redirects to new endpoint)
+app.post("/login", async (req, res) => {
+  req.url = '/api/auth/login';
+  return app._router.handle(req, res);
+});
+
 // ================== TEST ROUTES ==================
 
-// Test database connection
 app.get("/", async (req, res) => {
   try {
     const result = await pool.query("SELECT NOW()");
     res.json({ 
       success: true,
-      message: "Server is running",
-      time: result.rows[0].now 
+      message: "🏦 Secure Banking API Server",
+      time: result.rows[0].now,
+      endpoints: {
+        auth: ["/api/auth/register", "/api/auth/login"],
+        user: ["/api/user/accounts", "/api/user/transactions/:accountId", "/api/user/analytics"],
+        admin: ["/api/admin/users", "/api/admin/accounts", "/api/admin/transactions", "/api/admin/stats", "/api/admin/analytics"]
+      }
     });
   } catch (err) {
     console.error(err);
@@ -340,7 +458,6 @@ app.get("/", async (req, res) => {
   }
 });
 
-// Health check
 app.get("/health", async (req, res) => {
   try {
     await pool.query("SELECT 1");
@@ -353,5 +470,6 @@ app.get("/health", async (req, res) => {
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📝 API Documentation: http://localhost:${PORT}/`);
 });

@@ -32,7 +32,9 @@ services:
       PGUSER: ${PGUSER}
       PGPASSWORD: ${PGPASSWORD}
       PGDATABASE: ${PGDATABASE}
-      PGSSLMODE: prefer
+      PGSSLMODE: disable
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 3000
     ports:
       - "3000:3000"
     depends_on:
@@ -66,25 +68,3 @@ volumes:
 networks:
   secure-net:
     driver: bridge
-
-
-
-
-
-
-#project/
-#├── docker-compose.yml
-#├── .env
-#├── db/
-#│   └── init/
-#│       ├── 01_setup_ssl.sh    ← Generates SSL certs
-#│       └── init.sql           ← Lowkey drippy sql file
-#├── server/
-#│   ├── Dockerfile
-#│   ├── index.js
-#│   └── package.json
-#└── frontend/
-#    ├── Dockerfile
-#    ├── index.html
-#    ├── dashboard.html
-#    └── admin.html

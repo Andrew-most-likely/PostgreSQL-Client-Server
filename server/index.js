@@ -215,11 +215,12 @@ app.post("/api/auth/login", async (req, res) => {
 // Get user's own accounts
 app.get("/api/user/accounts", authenticateToken, async (req, res) => {
   try {
-    // RLS automatically filters by user_id
     const result = await pool.query(
       `SELECT account_id, account_number, balance, status, created_at
        FROM accounts
-       ORDER BY created_at DESC`
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
+      [req.user.user_id]
     );
     res.json({ success: true, accounts: result.rows });
   } catch (err) {
@@ -228,16 +229,22 @@ app.get("/api/user/accounts", authenticateToken, async (req, res) => {
   }
 });
 
-// Get user's transactions for specific account
+// Get user's transactions for a specific account
 app.get("/api/user/transactions/:accountId", authenticateToken, async (req, res) => {
   const accountId = parseInt(req.params.accountId);
-
-  if (isNaN(accountId)) {
-    return res.status(400).json({ success: false, message: "Invalid account ID" });
-  }
+  if (isNaN(accountId)) return res.status(400).json({ success: false, message: "Invalid account ID" });
 
   try {
-    // RLS ensures user can only see their own account transactions
+    // Ensure this account belongs to the logged-in user
+    const accountCheck = await pool.query(
+      `SELECT account_id FROM accounts WHERE account_id = $1 AND user_id = $2`,
+      [accountId, req.user.user_id]
+    );
+
+    if (accountCheck.rows.length === 0) {
+      return res.status(403).json({ success: false, message: "Unauthorized access to this account" });
+    }
+
     const result = await pool.query(
       `SELECT transaction_id, transaction_type, amount, transaction_date, description, balance_after
        FROM transactions
@@ -245,6 +252,7 @@ app.get("/api/user/transactions/:accountId", authenticateToken, async (req, res)
        ORDER BY transaction_date DESC`,
       [accountId]
     );
+
     res.json({ success: true, transactions: result.rows });
   } catch (err) {
     console.error(err);
@@ -255,53 +263,65 @@ app.get("/api/user/transactions/:accountId", authenticateToken, async (req, res)
 // Get user's analytics
 app.get("/api/user/analytics", authenticateToken, async (req, res) => {
   try {
-    // RLS filters to user's transactions only
     const totalResult = await pool.query(
-      `SELECT COUNT(*) as total FROM transactions t
-       JOIN accounts a ON t.account_id = a.account_id`
+      `SELECT COUNT(*) as total
+       FROM transactions t
+       JOIN accounts a ON t.account_id = a.account_id
+       WHERE a.user_id = $1`,
+      [req.user.user_id]
     );
-    
+
     const depositResult = await pool.query(
-      `SELECT COALESCE(SUM(amount), 0) as total_deposits FROM transactions t
+      `SELECT COALESCE(SUM(amount),0) as total_deposits
+       FROM transactions t
        JOIN accounts a ON t.account_id = a.account_id
-       WHERE transaction_type = 'deposit'`
+       WHERE a.user_id = $1 AND transaction_type = 'deposit'`,
+      [req.user.user_id]
     );
-    
+
     const withdrawalResult = await pool.query(
-      `SELECT COALESCE(SUM(amount), 0) as total_withdrawals FROM transactions t
+      `SELECT COALESCE(SUM(amount),0) as total_withdrawals
+       FROM transactions t
        JOIN accounts a ON t.account_id = a.account_id
-       WHERE transaction_type = 'withdrawal'`
+       WHERE a.user_id = $1 AND transaction_type = 'withdrawal'`,
+      [req.user.user_id]
     );
-    
+
     const typeResult = await pool.query(
       `SELECT transaction_type, COUNT(*) as count, SUM(amount) as total_amount
        FROM transactions t
        JOIN accounts a ON t.account_id = a.account_id
-       GROUP BY transaction_type`
+       WHERE a.user_id = $1
+       GROUP BY transaction_type`,
+      [req.user.user_id]
     );
 
     const recentResult = await pool.query(
       `SELECT t.*, a.account_number
        FROM transactions t
        JOIN accounts a ON t.account_id = a.account_id
+       WHERE a.user_id = $1
        ORDER BY t.transaction_date DESC
-       LIMIT 10`
+       LIMIT 10`,
+      [req.user.user_id]
     );
 
-    const analytics = {
-      totalTransactions: parseInt(totalResult.rows[0].total),
-      totalDeposits: parseFloat(depositResult.rows[0].total_deposits) || 0,
-      totalWithdrawals: parseFloat(withdrawalResult.rows[0].total_withdrawals) || 0,
-      byType: typeResult.rows,
-      recentTransactions: recentResult.rows
-    };
-
-    res.json({ success: true, analytics });
+    res.json({
+      success: true,
+      analytics: {
+        totalTransactions: parseInt(totalResult.rows[0].total),
+        totalDeposits: parseFloat(depositResult.rows[0].total_deposits),
+        totalWithdrawals: parseFloat(withdrawalResult.rows[0].total_withdrawals),
+        byType: typeResult.rows,
+        recentTransactions: recentResult.rows
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 
 // ================== ADMIN ROUTES ==================
 

@@ -388,7 +388,7 @@
             const user = JSON.parse(userStr);
             
             // Frontend check (convenience only - real check is on backend)
-            if (user.role !== 'admin') {
+            if (user.role !== 'user') {
                 window.location.href = "dashboard.html";
                 return null;
             }

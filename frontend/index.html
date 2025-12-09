@@ -244,17 +244,11 @@
       color: #2d3748;
     }
 
-    .security-badge::before {
-      content: "🔒";
-      font-size: 18px;
-    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="logo">
-      <h1>🏦 Secure Bank</h1>
-      <p>Your trusted financial partner</p>
     </div>
 
     <!-- Login Form -->
@@ -295,16 +289,14 @@
 
         <button class="btn" type="submit" id="loginBtn">Sign In</button>
       </form>
-      <div class="loading" id="loginLoading">🔐 Authenticating securely...</div>
+      <div class="loading" id="loginLoading">Authenticating securely...</div>
       <div class="message" id="loginMessage"></div>
     </div>
 
     <!-- Register Form -->
     <div class="card" id="registerCard">
       <h2>Create Account</h2>
-      <div class="security-badge">
-        Create your secure banking account
-      </div>
+
       <form id="registerForm">
         <div class="form-group">
           <label for="regUsername">Username</label>

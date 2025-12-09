@@ -272,9 +272,6 @@ CREATE POLICY audit_log_insert_policy ON audit_log FOR INSERT TO app_user WITH C
 -- VERIFICATION
 -- ============================================
 
-ALTER TABLE users DISABLE TRIGGER audit_users_trigger;
-ALTER TABLE accounts DISABLE TRIGGER audit_accounts_trigger;
-ALTER TABLE transactions DISABLE TRIGGER audit_transactions_trigger;
 
 
 SELECT 'users' as table_name, COUNT(*) as row_count FROM users

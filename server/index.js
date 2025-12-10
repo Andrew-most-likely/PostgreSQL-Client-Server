@@ -679,17 +679,37 @@ app.get("/api/user/csv-analytics", authenticateToken, (req, res) => {
       const totalWithdrawals = withdrawals.reduce((sum, t) => 
         sum + parseFloat(t.amount || 0), 0
       );
+      const totalTransfers = transfers.reduce((sum, t) => 
+        sum + parseFloat(t.amount || 0), 0
+      );
+
+      // Account summary
+      const accountMap = {};
+      transactions.forEach(t => {
+        const accId = t.account_id;
+        if (!accountMap[accId]) {
+          accountMap[accId] = { account_id: accId, transaction_count: 0, total_amount: 0 };
+        }
+        accountMap[accId].transaction_count++;
+        accountMap[accId].total_amount += parseFloat(t.amount || 0);
+      });
+      const accountSummary = Object.values(accountMap).map(acc => ({
+        ...acc,
+        total_amount: acc.total_amount.toFixed(2)
+      }));
 
       const analytics = {
         totalTransactions,
         totalDeposits: totalDeposits.toFixed(2),
         totalWithdrawals: totalWithdrawals.toFixed(2),
+        totalTransfers: totalTransfers.toFixed(2),
         netFlow: (totalDeposits - totalWithdrawals).toFixed(2),
         transactionsByType: {
           deposit: deposits.length,
           withdrawal: withdrawals.length,
           transfer: transfers.length
         },
+        accountSummary,
         recentTransactions: transactions.slice(0, 10)
       };
 
@@ -697,7 +717,8 @@ app.get("/api/user/csv-analytics", authenticateToken, (req, res) => {
         success: true, 
         analytics,
         message: "CSV analytics generated",
-        accessed_by: req.user.username
+        accessed_by: req.user.username,
+        accessed_at: new Date().toISOString()
       });
     })
     .on('error', (err) => {

@@ -1,0 +1,7 @@
+docker compose ip --build <- full rebuild
+docker compose down -v <- destroy pre copies
+
+
+v- required for port sec test
+Set-ExecutionPolicy Bypass -Scope Process 
+.\run-security-tests.ps1

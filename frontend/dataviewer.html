@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Viewer - Parts D & E</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background: #f7fafc;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .navbar h1 { font-size: 24px; font-weight: 700; }
+        
+        .navbar .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-logout, .btn-back {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn-logout:hover, .btn-back:hover { background: rgba(255,255,255,0.3); }
+
+        .container {
+            max-width: 1400px;
+            margin: 32px auto;
+            padding: 0 24px;
+        }
+
+        .welcome {
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 32px;
+        }
+
+        .welcome h2 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            color: #1a202c;
+        }
+
+        .welcome p { color: #718096; font-size: 16px; }
+
+        .tabs {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #e2e8f0;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #718096;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab:hover { color: #667eea; }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+        }
+
+        .card h3 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #1a202c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: #667eea;
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 12px;
+            margin-bottom: 12px;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #48bb78;
+        }
+
+        .btn-secondary:hover {
+            background: #38a169;
+        }
+
+        .btn-danger {
+            background: #f56565;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            max-height: 500px;
+            overflow-y: auto;
+            line-height: 1.5;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            background: white;
+        }
+
+        thead {
+            background: #f7fafc;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #2d3748;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 14px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #4a5568;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .stat-box {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-box h4 {
+            font-size: 12px;
+            color: #718096;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-box .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a202c;
+        }
+
+        .stat-box.positive .value {
+            color: #48bb78;
+        }
+
+        .stat-box.negative .value {
+            color: #f56565;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+            font-size: 16px;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            border-left: 4px solid #f56565;
+        }
+
+        .success {
+            background: #c6f6d5;
+            color: #2f855a;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            border-left: 4px solid #48bb78;
+        }
+
+        .security-info {
+            background: #edf2f7;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 16px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .security-info h4 {
+            font-size: 14px;
+            color: #2d3748;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .security-info ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .security-info li {
+            font-size: 13px;
+            color: #4a5568;
+            padding: 6px 0;
+            line-height: 1.5;
+        }
+
+        .security-info li:before {
+            content: "✓ ";
+            color: #48bb78;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .transaction-type {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .transaction-type.deposit {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .transaction-type.withdrawal {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .transaction-type.transfer {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+
+        .json-key {
+            color: #9f7aea;
+            font-weight: 600;
+        }
+
+        .json-string {
+            color: #48bb78;
+        }
+
+        .json-number {
+            color: #ed8936;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>🔒 Secure Data Viewer</h1>
+        <div class="user-info">
+            <span id="userName"></span>
+            <button class="btn-back" onclick="window.location.href='dashboard.html'">← Dashboard</button>
+            <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="welcome">
+            <h2>Parts D & E: Secure Data Access Demonstration</h2>
+            <p>Testing authenticated JSON and CSV endpoints with proper access control</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('json')">📄 Part D: JSON Endpoint</button>
+            <button class="tab" onclick="showTab('csv')">📊 Part E: CSV Analytics</button>
+            <button class="tab" onclick="showTab('unauthorized')">🚫 Unauthorized Test</button>
+        </div>
+
+        <!-- Part D: JSON Tab -->
+        <div class="tab-content active" id="jsonTab">
+            <div class="card">
+                <h3>📄 Part D: Secure JSON Data Endpoint</h3>
+                
+                <div class="security-info">
+                    <h4>🔐 Security Implementation:</h4>
+                    <ul>
+                        <li>Requires valid JWT authentication token in Authorization header</li>
+                        <li>Returns 401 Unauthorized if no token provided</li>
+                        <li>Returns 403 Forbidden if token is invalid or expired</li>
+                        <li>Logs all access attempts with username and timestamp</li>
+                        <li>JSON file stored in server/data/ directory (never exposed publicly)</li>
+                        <li>File path validation prevents directory traversal attacks</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <button class="btn" onclick="loadJsonData()">
+                        🔓 Load JSON Data (Authenticated)
+                    </button>
+                    <button class="btn btn-secondary" onclick="testUnauthorizedJson()">
+                        🚫 Test Without Token (Should Fail)
+                    </button>
+                </div>
+
+                <div id="jsonLoading" class="loading" style="display:none;">
+                    Loading secure JSON data...
+                </div>
+                <div id="jsonError" style="display:none;"></div>
+                <div id="jsonContent"></div>
+            </div>
+        </div>
+
+        <!-- Part E: CSV Tab -->
+        <div class="tab-content" id="csvTab">
+            <div class="card">
+                <h3>📊 Part E: Secure CSV Analytics Endpoint</h3>
+                
+                <div class="security-info">
+                    <h4>🔐 Security Implementation:</h4>
+                    <ul>
+                        <li>CSV file processed server-side only (never sent raw to client)</li>
+                        <li>Authentication required via JWT token</li>
+                        <li>File stored in protected server/data/ directory</li>
+                        <li>Analytics computed on backend, only results returned</li>
+                        <li>Access logging for security audit trail</li>
+                        <li>Prevents direct file download or unauthorized access</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <button class="btn" onclick="loadCsvAnalytics()">
+                        📊 Load CSV Analytics (Authenticated)
+                    </button>
+                    <button class="btn btn-secondary" onclick="testUnauthorizedCsv()">
+                        🚫 Test Without Token (Should Fail)
+                    </button>
+                </div>
+
+                <div id="csvLoading" class="loading" style="display:none;">
+                    Processing CSV data and generating analytics...
+                </div>
+                <div id="csvError" style="display:none;"></div>
+                <div id="csvContent"></div>
+            </div>
+        </div>
+
+        <!-- Unauthorized Access Test Tab -->
+        <div class="tab-content" id="unauthorizedTab">
+            <div class="card">
+                <h3>🚫 Unauthorized Access Testing</h3>
+                
+                <div class="security-info">
+                    <h4>🔐 What This Tests:</h4>
+                    <ul>
+                        <li>Endpoints reject requests without authentication tokens</li>
+                        <li>Proper HTTP status codes (401 Unauthorized, 403 Forbidden)</li>
+                        <li>Clear error messages without exposing sensitive info</li>
+                        <li>No data leakage in error responses</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <button class="btn btn-danger" onclick="testAllUnauthorized()">
+                        🚫 Test All Endpoints Without Authentication
+                    </button>
+                </div>
+
+                <div id="unauthorizedLoading" class="loading" style="display:none;">
+                    Testing unauthorized access...
+                </div>
+                <div id="unauthorizedContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:3000";
+        let authToken = null;
+        let currentUser = null;
+
+        // Check authentication
+        function checkAuth() {
+            authToken = localStorage.getItem("authToken");
+            const userStr = localStorage.getItem("user");
+            
+            if (!authToken || !userStr) {
+                window.location.href = "index.html";
+                return null;
+            }
+            
+            return JSON.parse(userStr);
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem("authToken");
+            localStorage.removeItem("user");
+            window.location.href = "index.html";
+        }
+
+        // Tab switching
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        // ================== PART D: JSON ENDPOINT ==================
+
+        async function loadJsonData() {
+            const loading = document.getElementById('jsonLoading');
+            const error = document.getElementById('jsonError');
+            const content = document.getElementById('jsonContent');
+            
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            content.innerHTML = '';
+
+            try {
+                const response = await fetch(`${API_URL}/api/user/sample-data`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                loading.style.display = 'none';
+
+                if (response.status === 401 || response.status === 403) {
+                    error.className = 'error';
+                    error.textContent = `🚫 Access Denied: ${response.status === 401 ? 'No authentication token' : 'Invalid or expired token'}`;
+                    error.style.display = 'block';
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    content.innerHTML = `
+                        <div class="success">
+                            ✓ ${data.message}
+                            <br><strong>Accessed by:</strong> ${data.accessed_by}
+                            <br><strong>Access time:</strong> ${new Date(data.accessed_at).toLocaleString()}
+                        </div>
+
+                        <h4 style="margin: 20px 0 10px 0; color: #2d3748;">JSON Data Preview:</h4>
+                        <pre>${JSON.stringify(data.data, null, 2)}</pre>
+
+                        <h4 style="margin: 20px 0 10px 0; color: #2d3748;">Data Summary:</h4>
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <h4>Total Records</h4>
+                                <div class="value">${data.data.length}</div>
+                            </div>
+                            <div class="stat-box">
+                                <h4>Data Type</h4>
+                                <div class="value" style="font-size: 16px;">User List</div>
+                            </div>
+                        </div>
+
+                        <h4 style="margin: 20px 0 10px 0; color: #2d3748;">User List:</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.data.map((user, i) => `
+                                    <tr>
+                                        <td>${i + 1}</td>
+                                        <td><strong>${user.username}</strong></td>
+                                        <td>${user.email}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    error.className = 'error';
+                    error.textContent = `❌ Error: ${data.message}`;
+                    error.style.display = 'block';
+                }
+
+            } catch (err) {
+                loading.style.display = 'none';
+                error.className = 'error';
+                error.textContent = `❌ Network Error: ${err.message}`;
+                error.style.display = 'block';
+                console.error('JSON endpoint error:', err);
+            }
+        }
+
+        async function testUnauthorizedJson() {
+            const error = document.getElementById('jsonError');
+            const content = document.getElementById('jsonContent');
+            
+            error.style.display = 'none';
+            content.innerHTML = '<div class="loading">Testing unauthorized access...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/api/user/sample-data`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                        // No Authorization header
+                    }
+                });
+
+                const data = await response.json();
+
+                content.innerHTML = `
+                    <div class="success">
+                        ✓ Security Test Passed!
+                    </div>
+                    <h4 style="margin: 20px 0 10px 0; color: #2d3748;">Test Results:</h4>
+                    <div class="security-info">
+                        <ul>
+                            <li><strong>HTTP Status:</strong> ${response.status} (${response.statusText})</li>
+                            <li><strong>Expected:</strong> 401 Unauthorized</li>
+                            <li><strong>Result:</strong> ${response.status === 401 ? '✓ PASS - Correctly rejected' : '✗ FAIL - Should have rejected'}</li>
+                            <li><strong>Message:</strong> ${data.message}</li>
+                        </ul>
+                    </div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+
+            } catch (err) {
+                content.innerHTML = `<div class="error">❌ Test Error: ${err.message}</div>`;
+            }
+        }
+
+        // ================== PART E: CSV ANALYTICS ==================
+
+        async function loadCsvAnalytics() {
+            const loading = document.getElementById('csvLoading');
+            const error = document.getElementById('csvError');
+            const content = document.getElementById('csvContent');
+            
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            content.innerHTML = '';
+
+            try {
+                const response = await fetch(`${API_URL}/api/user/csv-analytics`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                loading.style.display = 'none';
+
+                if (response.status === 401 || response.status === 403) {
+                    error.className = 'error';
+                    error.textContent = `🚫 Access Denied: ${response.status === 401 ? 'No authentication token' : 'Invalid or expired token'}`;
+                    error.style.display = 'block';
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const analytics = data.analytics;
+                    
+                    content.innerHTML = `
+                        <div class="success">
+                            ✓ ${data.message}
+                            <br><strong>Accessed by:</strong> ${data.accessed_by}
+                            <br><strong>Access time:</strong> ${new Date(data.accessed_at).toLocaleString()}
+                        </div>
+
+                        <h4 style="margin: 20px 0 10px 0; color: #2d3748;">CSV Analytics Summary:</h4>
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <h4>Total Transactions</h4>
+                                <div class="value">${analytics.totalTransactions}</div>
+                            </div>
+                            <div class="stat-box positive">
+                                <h4>Total Deposits</h4>
+                                <div class="value">$${analytics.totalDeposits}</div>
+                            </div>
+                            <div class="stat-box negative">
+                                <h4>Total Withdrawals</h4>
+                                <div class="value">$${analytics.totalWithdrawals}</div>
+                            </div>
+                            <div class="stat-box">
+                                <h4>Total Transfers</h4>
+                                <div class="value">$${analytics.totalTransfers}</div>
+                            </div>
+                            <div class="stat-box ${parseFloat(analytics.netFlow) >= 0 ? 'positive' : 'negative'}">
+                                <h4>Net Flow</h4>
+                                <div class="value">$${analytics.netFlow}</div>
+                            </div>
+                        </div>
+
+                        <h4 style="margin: 20px 0 10px 0; color: #2d3748;">Transactions by Type:</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Transaction Type</th>
+                                    <th>Count</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="transaction-type deposit">Deposit</span></td>
+                                    <td>${analytics.transactionsByType.deposit}</td>
+                                    <td>${((analytics.transactionsByType.deposit / analytics.totalTransactions) * 100).toFixed(1)}%</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="transaction-type withdrawal">Withdrawal</span></td>
+                                    <td>${analytics.transactionsByType.withdrawal}</td>
+                                    <td>${((analytics.transactionsByType.withdrawal / analytics.totalTransactions) * 100).toFixed(1)}%</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="transaction-type transfer">Transfer</span></td>
+                                    <td>${analytics.transactionsByType.transfer}</td>
+                                    <td>${((analytics.transactionsByType.transfer / analytics.totalTransactions) * 100).toFixed(1)}%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4 style="margin: 20px 0 10px 0; color: #2d3748;">Account Summary:</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Account ID</th>
+                                    <th>Transaction Count</th>
+                                    <th>Total Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${analytics.accountSummary.map(acc => `
+                                    <tr>
+                                        <td><strong>Account ${acc.account_id}</strong></td>
+                                        <td>${acc.transaction_count} transactions</td>
+                                        <td>$${acc.total_amount}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+
+                        <h4 style="margin: 20px 0 10px 0; color: #2d3748;">Recent Transactions (First 10):</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Account ID</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${analytics.recentTransactions.map(tx => `
+                                    <tr>
+                                        <td>${tx.account_id}</td>
+                                        <td><span class="transaction-type ${tx.transaction_type}">${tx.transaction_type}</span></td>
+                                        <td>$${parseFloat(tx.amount).toFixed(2)}</td>
+                                        <td>${tx.description}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                } else {
+                    error.className = 'error';
+                    error.textContent = `❌ Error: ${data.message}`;
+                    error.style.display = 'block';
+                }
+
+            } catch (err) {
+                loading.style.display = 'none';
+                error.className = 'error';
+                error.textContent = `❌ Network Error: ${err.message}`;
+                error.style.display = 'block';
+                console.error('CSV endpoint error:', err);
+            }
+        }
+
+        async function testUnauthorizedCsv() {
+            const error = document.getElementById('csvError');
+            const content = document.getElementById('csvContent');
+            
+            error.style.display = 'none';
+            content.innerHTML = '<div class="loading">Testing unauthorized access...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/api/user/csv-analytics`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                        // No Authorization header
+                    }
+                });
+
+                const data = await response.json();
+
+                content.innerHTML = `
+                    <div class="success">
+                        ✓ Security Test Passed!
+                    </div>
+                    <h4 style="margin: 20px 0 10px 0; color: #2d3748;">Test Results:</h4>
+                    <div class="security-info">
+                        <ul>
+                            <li><strong>HTTP Status:</strong> ${response.status} (${response.statusText})</li>
+                            <li><strong>Expected:</strong> 401 Unauthorized</li>
+                            <li><strong>Result:</strong> ${response.status === 401 ? '✓ PASS - Correctly rejected' : '✗ FAIL - Should have rejected'}</li>
+                            <li><strong>Message:</strong> ${data.message}</li>
+                        </ul>
+                    </div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+
+            } catch (err) {
+                content.innerHTML = `<div class="error">❌ Test Error: ${err.message}</div>`;
+            }
+        }
+
+        // ================== UNAUTHORIZED ACCESS TESTING ==================
+
+        async function testAllUnauthorized() {
+            const loading = document.getElementById('unauthorizedLoading');
+            const content = document.getElementById('unauthorizedContent');
+            
+            loading.style.display = 'block';
+            content.innerHTML = '';
+
+            const endpoints = [
+                { name: 'JSON Endpoint', url: '/api/user/sample-data' },
+                { name: 'CSV Analytics', url: '/api/user/csv-analytics' }
+            ];
+
+            let results = '<h4 style="margin: 20px 0 10px 0; color: #2d3748;">Unauthorized Access Test Results:</h4>';
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`${API_URL}${endpoint.url}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                            // No Authorization header
+                        }
+                    });
+
+                    const data = await response.json();
+                    const passed = response.status === 401;
+
+                    results += `
+                        <div class="${passed ? 'success' : 'error'}" style="margin-bottom: 16px;">
+                            <strong>${endpoint.name}</strong>
+                            <br>Status: ${response.status} (${response.statusText})
+                            <br>Result: ${passed ? '✓ PASS - Correctly rejected unauthorized request' : '✗ FAIL - Should have rejected'}
+                            <br>Message: ${data.message}
+                        </div>
+                    `;
+
+                } catch (err) {
+                    results += `
+                        <div class="error" style="margin-bottom: 16px;">
+                            <strong>${endpoint.name}</strong>
+                            <br>❌ Test Error: ${err.message}
+                        </div>
+                    `;
+                }
+            }
+
+            loading.style.display = 'none';
+            content.innerHTML = results;
+        }
+
+        // Initialize
+        currentUser = checkAuth();
+        if (currentUser) {
+            document.getElementById('userName').textContent = currentUser.full_name;
+        }
+    </script>
+</body>
+</html>

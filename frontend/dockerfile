@@ -3,7 +3,7 @@ FROM nginx:alpine
 COPY index.html /usr/share/nginx/html/
 COPY dashboard.html /usr/share/nginx/html/
 COPY admin.html /usr/share/nginx/html/
-
+COPY dataviewer.html /usr/share/nginx/html/
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]

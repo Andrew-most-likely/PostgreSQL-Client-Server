@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🔧 Configuring PostgreSQL SSL..."
+echo " Configuring PostgreSQL SSL..."
 
 # Copy SSL certificates from temp location to data directory
 if [ -f "$SSL_CERT_FILE" ] && [ -f "$SSL_KEY_FILE" ]; then
@@ -12,7 +12,7 @@ if [ -f "$SSL_CERT_FILE" ] && [ -f "$SSL_KEY_FILE" ]; then
     chmod 600 "$PGDATA/server.key"
     chmod 644 "$PGDATA/server.crt"
     
-    echo "✅ SSL certificates copied to data directory"
+    echo " SSL certificates copied to data directory"
     
     # Configure PostgreSQL to use SSL
     echo "ssl = on" >> "$PGDATA/postgresql.conf"
@@ -22,7 +22,7 @@ if [ -f "$SSL_CERT_FILE" ] && [ -f "$SSL_KEY_FILE" ]; then
     # Require SSL for non-local connections
     echo "hostssl all all 0.0.0.0/0 scram-sha-256" >> "$PGDATA/pg_hba.conf"
     
-    echo "✅ PostgreSQL configured for SSL"
+    echo " PostgreSQL configured for SSL"
 else
-    echo "⚠️  SSL certificates not found, SSL not enabled"
+    echo "  SSL certificates not found, SSL not enabled"
 fi

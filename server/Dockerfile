@@ -8,5 +8,8 @@ RUN npm install
 # Copy application code
 COPY index.js ./
 
+# Copy the data directory
+COPY data/ ./data/
+
 EXPOSE 3000
 CMD ["node", "index.js"]

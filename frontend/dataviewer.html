@@ -338,7 +338,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <h1>🔒 Secure Data Viewer</h1>
+        <h1> Secure Data Viewer</h1>
         <div class="user-info">
             <span id="userName"></span>
             <button class="btn-back" onclick="window.location.href='dashboard.html'">← Dashboard</button>
@@ -353,18 +353,18 @@
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="showTab('json')">📄 Part D: JSON Endpoint</button>
-            <button class="tab" onclick="showTab('csv')">📊 Part E: CSV Analytics</button>
-            <button class="tab" onclick="showTab('unauthorized')">🚫 Unauthorized Test</button>
+            <button class="tab active" onclick="showTab('json')"> Part D: JSON Endpoint</button>
+            <button class="tab" onclick="showTab('csv')"> Part E: CSV Analytics</button>
+            <button class="tab" onclick="showTab('unauthorized')"> Unauthorized Test</button>
         </div>
 
         <!-- Part D: JSON Tab -->
         <div class="tab-content active" id="jsonTab">
             <div class="card">
-                <h3>📄 Part D: Secure JSON Data Endpoint</h3>
+                <h3> Part D: Secure JSON Data Endpoint</h3>
                 
                 <div class="security-info">
-                    <h4>🔐 Security Implementation:</h4>
+                    <h4> Security Implementation:</h4>
                     <ul>
                         <li>Requires valid JWT authentication token in Authorization header</li>
                         <li>Returns 401 Unauthorized if no token provided</li>
@@ -377,10 +377,10 @@
 
                 <div>
                     <button class="btn" onclick="loadJsonData()">
-                        🔓 Load JSON Data (Authenticated)
+                         Load JSON Data (Authenticated)
                     </button>
                     <button class="btn btn-secondary" onclick="testUnauthorizedJson()">
-                        🚫 Test Without Token (Should Fail)
+                         Test Without Token (Should Fail)
                     </button>
                 </div>
 
@@ -395,10 +395,10 @@
         <!-- Part E: CSV Tab -->
         <div class="tab-content" id="csvTab">
             <div class="card">
-                <h3>📊 Part E: Secure CSV Analytics Endpoint</h3>
+                <h3> Part E: Secure CSV Analytics Endpoint</h3>
                 
                 <div class="security-info">
-                    <h4>🔐 Security Implementation:</h4>
+                    <h4> Security Implementation:</h4>
                     <ul>
                         <li>CSV file processed server-side only (never sent raw to client)</li>
                         <li>Authentication required via JWT token</li>
@@ -411,10 +411,10 @@
 
                 <div>
                     <button class="btn" onclick="loadCsvAnalytics()">
-                        📊 Load CSV Analytics (Authenticated)
+                         Load CSV Analytics (Authenticated)
                     </button>
                     <button class="btn btn-secondary" onclick="testUnauthorizedCsv()">
-                        🚫 Test Without Token (Should Fail)
+                         Test Without Token (Should Fail)
                     </button>
                 </div>
 
@@ -429,10 +429,10 @@
         <!-- Unauthorized Access Test Tab -->
         <div class="tab-content" id="unauthorizedTab">
             <div class="card">
-                <h3>🚫 Unauthorized Access Testing</h3>
+                <h3> Unauthorized Access Testing</h3>
                 
                 <div class="security-info">
-                    <h4>🔐 What This Tests:</h4>
+                    <h4> What This Tests:</h4>
                     <ul>
                         <li>Endpoints reject requests without authentication tokens</li>
                         <li>Proper HTTP status codes (401 Unauthorized, 403 Forbidden)</li>
@@ -443,7 +443,7 @@
 
                 <div>
                     <button class="btn btn-danger" onclick="testAllUnauthorized()">
-                        🚫 Test All Endpoints Without Authentication
+                         Test All Endpoints Without Authentication
                     </button>
                 </div>
 
@@ -513,7 +513,7 @@
 
                 if (response.status === 401 || response.status === 403) {
                     error.className = 'error';
-                    error.textContent = `🚫 Access Denied: ${response.status === 401 ? 'No authentication token' : 'Invalid or expired token'}`;
+                    error.textContent = ` Access Denied: ${response.status === 401 ? 'No authentication token' : 'Invalid or expired token'}`;
                     error.style.display = 'block';
                     return;
                 }
@@ -565,14 +565,14 @@
                     `;
                 } else {
                     error.className = 'error';
-                    error.textContent = `❌ Error: ${data.message}`;
+                    error.textContent = ` Error: ${data.message}`;
                     error.style.display = 'block';
                 }
 
             } catch (err) {
                 loading.style.display = 'none';
                 error.className = 'error';
-                error.textContent = `❌ Network Error: ${err.message}`;
+                error.textContent = ` Network Error: ${err.message}`;
                 error.style.display = 'block';
                 console.error('JSON endpoint error:', err);
             }
@@ -613,7 +613,7 @@
                 `;
 
             } catch (err) {
-                content.innerHTML = `<div class="error">❌ Test Error: ${err.message}</div>`;
+                content.innerHTML = `<div class="error"> Test Error: ${err.message}</div>`;
             }
         }
 
@@ -641,7 +641,7 @@
 
                 if (response.status === 401 || response.status === 403) {
                     error.className = 'error';
-                    error.textContent = `🚫 Access Denied: ${response.status === 401 ? 'No authentication token' : 'Invalid or expired token'}`;
+                    error.textContent = ` Access Denied: ${response.status === 401 ? 'No authentication token' : 'Invalid or expired token'}`;
                     error.style.display = 'block';
                     return;
                 }
@@ -754,14 +754,14 @@
                     `;
                 } else {
                     error.className = 'error';
-                    error.textContent = `❌ Error: ${data.message}`;
+                    error.textContent = ` Error: ${data.message}`;
                     error.style.display = 'block';
                 }
 
             } catch (err) {
                 loading.style.display = 'none';
                 error.className = 'error';
-                error.textContent = `❌ Network Error: ${err.message}`;
+                error.textContent = ` Network Error: ${err.message}`;
                 error.style.display = 'block';
                 console.error('CSV endpoint error:', err);
             }
@@ -802,7 +802,7 @@
                 `;
 
             } catch (err) {
-                content.innerHTML = `<div class="error">❌ Test Error: ${err.message}</div>`;
+                content.innerHTML = `<div class="error"> Test Error: ${err.message}</div>`;
             }
         }
 

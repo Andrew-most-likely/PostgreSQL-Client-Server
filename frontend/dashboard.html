@@ -423,7 +423,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <h1>🏦 Secure Bank</h1>
+        <h1> Secure Bank</h1>
         <div class="user-info">
             <span class="user-name" id="userName"></span>
             <button class="btn-logout" onclick="logout()">Logout</button>
@@ -436,11 +436,9 @@
                 <h2 id="welcomeMessage"></h2>
                 <p>Manage your accounts and transactions</p>
             </div>
-            <button class="btn-create-account" onclick="window.location.href='dataviewer.html'" style="background: #48bb78;">
-                📊 View Data (Parts D & E)
-            </button>
+
             <button class="btn-create-account" onclick="showCreateAccountModal()">
-                ➕ Create New Account
+                 Create New Account
             </button>
         </div>
 
@@ -475,7 +473,7 @@
     <!-- Deposit Modal -->
     <div class="modal" id="depositModal">
         <div class="modal-content">
-            <h3>💰 Deposit Money</h3>
+            <h3> Deposit Money</h3>
             <div class="message" id="depositMessage"></div>
             <form id="depositForm" onsubmit="handleDeposit(event)">
                 <div class="form-group">
@@ -493,7 +491,7 @@
     <!-- Withdraw Modal -->
     <div class="modal" id="withdrawModal">
         <div class="modal-content">
-            <h3>💸 Withdraw Money</h3>
+            <h3> Withdraw Money</h3>
             <div class="message" id="withdrawMessage"></div>
             <form id="withdrawForm" onsubmit="handleWithdraw(event)">
                 <div class="form-group">
@@ -583,13 +581,13 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    alert('✅ Account created successfully!');
+                    alert(' Account created successfully!');
                     loadAccounts();
                 } else {
-                    alert('❌ Failed to create account: ' + data.message);
+                    alert(' Failed to create account: ' + data.message);
                 }
             } catch (err) {
-                alert('❌ Error creating account');
+                alert(' Error creating account');
                 console.error(err);
             }
         }
@@ -617,13 +615,13 @@
                                 </p>
                                 <div class="card-actions">
                                     <button class="btn btn-primary" onclick="showDepositModal(${acc.account_id})">
-                                        💰 Deposit
+                                         Deposit
                                     </button>
                                     <button class="btn btn-secondary" onclick="showWithdrawModal(${acc.account_id})">
-                                        💸 Withdraw
+                                         Withdraw
                                     </button>
                                     <button class="btn btn-info" onclick="loadTransactions(${acc.account_id})">
-                                        📊 View
+                                         View
                                     </button>
                                 </div>
                             </div>
@@ -681,7 +679,7 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    message.textContent = `✅ Successfully deposited $${amount.toFixed(2)}!`;
+                    message.textContent = ` Successfully deposited $${amount.toFixed(2)}!`;
                     message.className = 'message success show';
                     
                     setTimeout(() => {
@@ -689,11 +687,11 @@
                         loadAccounts();
                     }, 1500);
                 } else {
-                    message.textContent = '❌ ' + data.message;
+                    message.textContent = ' ' + data.message;
                     message.className = 'message error show';
                 }
             } catch (err) {
-                message.textContent = '❌ Deposit failed';
+                message.textContent = ' Deposit failed';
                 message.className = 'message error show';
                 console.error(err);
             }
@@ -715,7 +713,7 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    message.textContent = `✅ Successfully withdrew $${amount.toFixed(2)}!`;
+                    message.textContent = ` Successfully withdrew $${amount.toFixed(2)}!`;
                     message.className = 'message success show';
                     
                     setTimeout(() => {
@@ -723,11 +721,11 @@
                         loadAccounts();
                     }, 1500);
                 } else {
-                    message.textContent = '❌ ' + data.message;
+                    message.textContent = ' ' + data.message;
                     message.className = 'message error show';
                 }
             } catch (err) {
-                message.textContent = '❌ Withdrawal failed';
+                message.textContent = ' Withdrawal failed';
                 message.className = 'message error show';
                 console.error(err);
             }
@@ -846,15 +844,15 @@
                     document.getElementById('analyticsContent').innerHTML = `
                         <div class="card-grid">
                             <div class="card">
-                                <h3>📊 Total Transactions</h3>
+                                <h3> Total Transactions</h3>
                                 <div class="balance">${analytics.totalTransactions}</div>
                             </div>
                             <div class="card">
-                                <h3>💰 Total Deposits</h3>
+                                <h3> Total Deposits</h3>
                                 <div class="balance amount-positive">$${analytics.totalDeposits.toFixed(2)}</div>
                             </div>
                             <div class="card">
-                                <h3>💸 Total Withdrawals</h3>
+                                <h3> Total Withdrawals</h3>
                                 <div class="balance amount-negative">$${analytics.totalWithdrawals.toFixed(2)}</div>
                             </div>
                         </div>

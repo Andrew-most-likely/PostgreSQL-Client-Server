@@ -68,17 +68,37 @@
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             margin-bottom: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .welcome h2 {
+        .welcome-text h2 {
             font-size: 28px;
             margin-bottom: 8px;
             color: #1a202c;
         }
 
-        .welcome p {
+        .welcome-text p {
             color: #718096;
             font-size: 16px;
+        }
+
+        .btn-create-account {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-create-account:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
 
         .tabs {
@@ -150,24 +170,16 @@
             color: #4a5568;
         }
 
-        .card-content p {
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .card-content strong {
-            color: #2d3748;
-        }
-
         .account-number {
             font-family: 'Courier New', monospace;
             font-weight: bold;
             color: #667eea;
+            font-size: 14px;
+            margin-bottom: 12px;
         }
 
         .balance {
-            font-size: 24px;
+            font-size: 32px;
             font-weight: 700;
             color: #48bb78;
             margin: 16px 0;
@@ -187,6 +199,141 @@
         }
 
         .status.suspended {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #38a169;
+        }
+
+        .btn-secondary {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #e53e3e;
+        }
+
+        .btn-info {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #5568d3;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #1a202c;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .form-group input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn-cancel {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+
+        .btn-cancel:hover {
+            background: #cbd5e0;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .message.error {
             background: #fed7d7;
             color: #c53030;
         }
@@ -243,11 +390,6 @@
             color: #c53030;
         }
 
-        .transaction-type.transfer {
-            background: #bee3f8;
-            color: #2c5282;
-        }
-
         .amount-positive {
             color: #48bb78;
             font-weight: 600;
@@ -277,28 +419,11 @@
             padding: 60px 20px;
             color: #718096;
         }
-
-        .btn-view-transactions {
-            margin-top: 16px;
-            width: 100%;
-            padding: 10px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-
-        .btn-view-transactions:hover {
-            background: #5568d3;
-        }
     </style>
 </head>
 <body>
     <nav class="navbar">
-        <h1>Secure Bank</h1>
+        <h1>🏦 Secure Bank</h1>
         <div class="user-info">
             <span class="user-name" id="userName"></span>
             <button class="btn-logout" onclick="logout()">Logout</button>
@@ -307,8 +432,13 @@
 
     <div class="container">
         <div class="welcome">
-            <h2 id="welcomeMessage"></h2>
-            <p>Manage your accounts and view transaction history</p>
+            <div class="welcome-text">
+                <h2 id="welcomeMessage"></h2>
+                <p>Manage your accounts and transactions</p>
+            </div>
+            <button class="btn-create-account" onclick="showCreateAccountModal()">
+                ➕ Create New Account
+            </button>
         </div>
 
         <div class="tabs">
@@ -339,33 +469,49 @@
         </div>
     </div>
 
+    <!-- Deposit Modal -->
+    <div class="modal" id="depositModal">
+        <div class="modal-content">
+            <h3>💰 Deposit Money</h3>
+            <div class="message" id="depositMessage"></div>
+            <form id="depositForm" onsubmit="handleDeposit(event)">
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="depositAmount" step="0.01" min="0.01" required placeholder="0.00">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeModal('depositModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Deposit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Withdraw Modal -->
+    <div class="modal" id="withdrawModal">
+        <div class="modal-content">
+            <h3>💸 Withdraw Money</h3>
+            <div class="message" id="withdrawMessage"></div>
+            <form id="withdrawForm" onsubmit="handleWithdraw(event)">
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="withdrawAmount" step="0.01" min="0.01" required placeholder="0.00">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeModal('withdrawModal')">Cancel</button>
+                    <button type="submit" class="btn btn-secondary">Withdraw</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const API_URL = "http://localhost:3000";
         let authToken = null;
         let currentUser = null;
+        let currentAccountId = null;
 
-        /* 
-         * SECURITY IMPROVEMENTS:
-         * 
-         * 1. JWT Token Authentication:
-         *    - Store JWT token instead of full user object
-         *    - Token contains signed user ID and role that backend can verify
-         *    - Backend validates token signature on every request
-         * 
-         * 2. Backend Authorization:
-         *    - Backend extracts user ID from validated JWT token
-         *    - Backend enforces that users can ONLY access their own data
-         *    - SQL queries include WHERE clauses: accounts.user_id = authenticated_user_id
-         *    - No user can query data for other user IDs
-         * 
-         * 3. User Scope Enforcement:
-         *    - API endpoint: GET /api/accounts (no user ID in URL)
-         *    - Backend gets user ID from JWT token, not from client
-         *    - Returns only accounts WHERE user_id = token.user_id
-         *    - Same pattern for all endpoints
-         */
-
-        // Check authentication and retrieve token
+        // Check authentication
         function checkAuth() {
             authToken = localStorage.getItem("authToken");
             const userStr = localStorage.getItem("user");
@@ -398,7 +544,6 @@
                 headers
             });
 
-            // Handle unauthorized
             if (response.status === 401 || response.status === 403) {
                 logout();
                 return null;
@@ -422,11 +567,33 @@
             }
         }
 
-        // Load user's accounts (only their own)
-        // Backend enforces: SELECT * FROM accounts WHERE user_id = authenticated_user_id
+        // Create new account
+        async function showCreateAccountModal() {
+            if (!confirm('Create a new bank account?')) return;
+
+            try {
+                const res = await authenticatedFetch(`${API_URL}/api/user/accounts/create`, {
+                    method: 'POST'
+                });
+
+                if (!res) return;
+                const data = await res.json();
+
+                if (data.success) {
+                    alert('✅ Account created successfully!');
+                    loadAccounts();
+                } else {
+                    alert('❌ Failed to create account: ' + data.message);
+                }
+            } catch (err) {
+                alert('❌ Error creating account');
+                console.error(err);
+            }
+        }
+
+        // Load user's accounts
         async function loadAccounts() {
             try {
-                // Note: No user ID in URL - backend gets it from JWT token
                 const res = await authenticatedFetch(`${API_URL}/api/user/accounts`);
                 if (!res) return;
 
@@ -437,22 +604,32 @@
                     const grid = document.getElementById('accountsGrid');
                     grid.innerHTML = data.accounts.map(acc => `
                         <div class="card">
-                            <h3>💳 Account ${acc.account_number}</h3>
+                            <h3>💳 Bank Account</h3>
                             <div class="card-content">
-                                <p class="account-number">${acc.account_number}</p>
+                                <div class="account-number">${acc.account_number}</div>
                                 <div class="balance">$${parseFloat(acc.balance).toFixed(2)}</div>
-                                <p>
+                                <p style="margin-bottom: 16px;">
                                     <strong>Status:</strong>
                                     <span class="status ${acc.status}">${acc.status}</span>
                                 </p>
-                                <button class="btn-view-transactions" onclick="loadTransactions(${acc.account_id})">View Transactions</button>
+                                <div class="card-actions">
+                                    <button class="btn btn-primary" onclick="showDepositModal(${acc.account_id})">
+                                        💰 Deposit
+                                    </button>
+                                    <button class="btn btn-secondary" onclick="showWithdrawModal(${acc.account_id})">
+                                        💸 Withdraw
+                                    </button>
+                                    <button class="btn btn-info" onclick="loadTransactions(${acc.account_id})">
+                                        📊 View
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     `).join('');
                 } else {
                     document.getElementById('accountsGrid').innerHTML = `
                         <div class="empty-state">
-                            <p>No accounts found</p>
+                            <p>No accounts yet. Create your first account!</p>
                         </div>
                     `;
                 }
@@ -464,8 +641,96 @@
             }
         }
 
+        // Show deposit modal
+        function showDepositModal(accountId) {
+            currentAccountId = accountId;
+            document.getElementById('depositAmount').value = '';
+            document.getElementById('depositMessage').classList.remove('show');
+            document.getElementById('depositModal').classList.add('active');
+        }
+
+        // Show withdraw modal
+        function showWithdrawModal(accountId) {
+            currentAccountId = accountId;
+            document.getElementById('withdrawAmount').value = '';
+            document.getElementById('withdrawMessage').classList.remove('show');
+            document.getElementById('withdrawModal').classList.add('active');
+        }
+
+        // Close modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Handle deposit
+        async function handleDeposit(event) {
+            event.preventDefault();
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            const message = document.getElementById('depositMessage');
+
+            try {
+                const res = await authenticatedFetch(`${API_URL}/api/user/accounts/${currentAccountId}/deposit`, {
+                    method: 'POST',
+                    body: JSON.stringify({ amount })
+                });
+
+                if (!res) return;
+                const data = await res.json();
+
+                if (data.success) {
+                    message.textContent = `✅ Successfully deposited $${amount.toFixed(2)}!`;
+                    message.className = 'message success show';
+                    
+                    setTimeout(() => {
+                        closeModal('depositModal');
+                        loadAccounts();
+                    }, 1500);
+                } else {
+                    message.textContent = '❌ ' + data.message;
+                    message.className = 'message error show';
+                }
+            } catch (err) {
+                message.textContent = '❌ Deposit failed';
+                message.className = 'message error show';
+                console.error(err);
+            }
+        }
+
+        // Handle withdraw
+        async function handleWithdraw(event) {
+            event.preventDefault();
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const message = document.getElementById('withdrawMessage');
+
+            try {
+                const res = await authenticatedFetch(`${API_URL}/api/user/accounts/${currentAccountId}/withdraw`, {
+                    method: 'POST',
+                    body: JSON.stringify({ amount })
+                });
+
+                if (!res) return;
+                const data = await res.json();
+
+                if (data.success) {
+                    message.textContent = `✅ Successfully withdrew $${amount.toFixed(2)}!`;
+                    message.className = 'message success show';
+                    
+                    setTimeout(() => {
+                        closeModal('withdrawModal');
+                        loadAccounts();
+                    }, 1500);
+                } else {
+                    message.textContent = '❌ ' + data.message;
+                    message.className = 'message error show';
+                }
+            } catch (err) {
+                message.textContent = '❌ Withdrawal failed';
+                message.className = 'message error show';
+                console.error(err);
+            }
+        }
+
         // Load transactions for specific account
-        // Backend enforces: user must own the account_id they're requesting
         async function loadTransactions(accountId) {
             showTab('transactions');
             document.getElementById('transactionsLoading').style.display = 'block';
@@ -473,7 +738,6 @@
             document.getElementById('transactionsError').style.display = 'none';
 
             try {
-                // Backend validates: account_id belongs to authenticated user
                 const res = await authenticatedFetch(`${API_URL}/api/user/transactions/${accountId}`);
                 if (!res) return;
 
@@ -504,7 +768,6 @@
             document.getElementById('transactionsError').style.display = 'none';
 
             try {
-                // Get user's accounts first (backend filters by user)
                 const accountsRes = await authenticatedFetch(`${API_URL}/api/user/accounts`);
                 if (!accountsRes) return;
                 
@@ -520,7 +783,6 @@
                     return;
                 }
 
-                // Load transactions for first account
                 const firstAccount = accountsData.accounts[0];
                 loadTransactions(firstAccount.account_id);
 
@@ -542,6 +804,7 @@
                             <th>Date</th>
                             <th>Type</th>
                             <th>Amount</th>
+                            <th>Balance After</th>
                             <th>Description</th>
                         </tr>
                     </thead>
@@ -553,6 +816,7 @@
                                 <td class="${t.transaction_type === 'deposit' ? 'amount-positive' : 'amount-negative'}">
                                     ${t.transaction_type === 'deposit' ? '+' : '-'}$${parseFloat(t.amount).toFixed(2)}
                                 </td>
+                                <td>$${parseFloat(t.balance_after).toFixed(2)}</td>
                                 <td>${t.description || 'N/A'}</td>
                             </tr>
                         `).join('')}
@@ -561,14 +825,13 @@
             `;
         }
 
-        // Load analytics (only for user's accounts)
+        // Load analytics
         async function loadAnalytics() {
             document.getElementById('analyticsLoading').style.display = 'block';
             document.getElementById('analyticsContent').innerHTML = '';
             document.getElementById('analyticsError').style.display = 'none';
 
             try {
-                // Backend filters analytics to only user's transactions
                 const res = await authenticatedFetch(`${API_URL}/api/user/analytics`);
                 if (!res) return;
 
@@ -591,54 +854,6 @@
                                 <h3>💸 Total Withdrawals</h3>
                                 <div class="balance amount-negative">$${analytics.totalWithdrawals.toFixed(2)}</div>
                             </div>
-                        </div>
-
-                        <div class="card" style="margin-top: 24px;">
-                            <h3>📈 Transaction Breakdown</h3>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Type</th>
-                                        <th>Count</th>
-                                        <th>Total Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${analytics.byType.map(t => `
-                                        <tr>
-                                            <td><span class="transaction-type ${t.transaction_type}">${t.transaction_type}</span></td>
-                                            <td>${t.count}</td>
-                                            <td>$${parseFloat(t.total_amount).toFixed(2)}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="card" style="margin-top: 24px;">
-                            <h3>🕒 Recent Transactions</h3>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Account</th>
-                                        <th>Type</th>
-                                        <th>Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${analytics.recentTransactions.map(t => `
-                                        <tr>
-                                            <td>${new Date(t.transaction_date).toLocaleString()}</td>
-                                            <td>${t.account_number}</td>
-                                            <td><span class="transaction-type ${t.transaction_type}">${t.transaction_type}</span></td>
-                                            <td class="${t.transaction_type === 'deposit' ? 'amount-positive' : 'amount-negative'}">
-                                                $${parseFloat(t.amount).toFixed(2)}
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
                         </div>
                     `;
                 }

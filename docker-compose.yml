@@ -1,13 +1,12 @@
 services:
   db:
-    image: postgres:18
+    build: ./db  # Use custom Dockerfile instead of postgres:18 image
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - db_data:/var/lib/postgresql
-      - ./db/init:/docker-entrypoint-initdb.d
+      - db_data:/var/lib/postgresql/data
     networks:
       - secure-net
     deploy:
@@ -32,7 +31,7 @@ services:
       PGUSER: ${PGUSER}
       PGPASSWORD: ${PGPASSWORD}
       PGDATABASE: ${PGDATABASE}
-      PGSSLMODE: disable
+      PGSSLMODE: require  # Enable SSL connection
       JWT_SECRET: ${JWT_SECRET}
       PORT: 3000
     ports:

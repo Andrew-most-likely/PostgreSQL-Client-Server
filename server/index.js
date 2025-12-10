@@ -29,13 +29,13 @@ const pool = new Pool({
 // Test database connection
 pool.connect((err, client, release) => {
   if (err) {
-    console.error("❌ Database connection error:", err.stack);
+    console.error("Database connection error:", err.stack);
   } else {
-    console.log("✅ Connected to PostgreSQL database");
+    console.log("Connected to PostgreSQL database");
     client.query("SHOW ssl", (err, result) => {
       release();
       if (!err) {
-        console.log("🔒 SSL Status:", result.rows[0].ssl);
+        console.log("SSL Status:", result.rows[0].ssl);
       }
     });
   }
@@ -80,7 +80,7 @@ async function authenticateToken(req, res, next) {
 
 // Admin-only middleware
 function requireAdmin(req, res, next) {
-  if (req.user.role !== 'admin') {
+  if (req.user.role !== 'admin') { //Change this to standard if you want to see admin page on account creation
     return res.status(403).json({ success: false, message: "Admin access required" });
   }
   next();
@@ -576,7 +576,7 @@ app.get("/", async (req, res) => {
     const result = await pool.query("SELECT NOW()");
     res.json({ 
       success: true,
-      message: "🏦 Secure Banking API Server",
+      message: "Secure Banking API Server",
       time: result.rows[0].now,
       endpoints: {
         auth: ["/api/auth/register", "/api/auth/login"],
@@ -602,6 +602,6 @@ app.get("/health", async (req, res) => {
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📝 API Documentation: http://localhost:${PORT}/`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`API Documentation: http://localhost:${PORT}/`);
 });

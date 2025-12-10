@@ -599,6 +599,190 @@ app.get("/health", async (req, res) => {
   }
 });
 
+
+// ================== CSV & JSON ENDPOINTS ==================
+// Add these lines AFTER all existing routes, BEFORE app.listen()
+
+const fs = require('fs');
+const path = require('path');
+const csv = require('csv-parser');
+
+// JSON endpoint - Secure API that reads sample_data.json
+app.get("/api/user/sample-data", authenticateToken, async (req, res) => {
+  try {
+    const jsonPath = path.join(__dirname, 'data', 'sample_data.json');
+    
+    // Check if file exists
+    if (!fs.existsSync(jsonPath)) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Sample data file not found. Please add data/sample_data.json to server directory." 
+      });
+    }
+
+    const jsonData = fs.readFileSync(jsonPath, 'utf8');
+    const parsedData = JSON.parse(jsonData);
+
+    res.json({ 
+      success: true, 
+      data: parsedData,
+      message: "Secure JSON data retrieved",
+      accessed_by: req.user.username,
+      accessed_at: new Date().toISOString()
+    });
+
+  } catch (err) {
+    console.error('JSON data error:', err.message);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to load JSON data: " + err.message 
+    });
+  }
+});
+
+// CSV Analytics endpoint - Processes transactions_export.csv
+app.get("/api/user/csv-analytics", authenticateToken, (req, res) => {
+  const csvPath = path.join(__dirname, 'data', 'transactions_export.csv');
+  
+  // Check if file exists
+  if (!fs.existsSync(csvPath)) {
+    return res.status(404).json({ 
+      success: false, 
+      message: "CSV file not found. Please add data/transactions_export.csv to server directory." 
+    });
+  }
+
+  const transactions = [];
+
+  fs.createReadStream(csvPath)
+    .pipe(csv())
+    .on('data', (row) => {
+      transactions.push(row);
+    })
+    .on('end', () => {
+      // Calculate analytics
+      const totalTransactions = transactions.length;
+      
+      const deposits = transactions.filter(t => 
+        (t.transaction_type || '').toLowerCase() === 'deposit'
+      );
+      const withdrawals = transactions.filter(t => 
+        (t.transaction_type || '').toLowerCase() === 'withdrawal'
+      );
+      const transfers = transactions.filter(t => 
+        (t.transaction_type || '').toLowerCase() === 'transfer'
+      );
+      
+      const totalDeposits = deposits.reduce((sum, t) => 
+        sum + parseFloat(t.amount || 0), 0
+      );
+      const totalWithdrawals = withdrawals.reduce((sum, t) => 
+        sum + parseFloat(t.amount || 0), 0
+      );
+
+      const analytics = {
+        totalTransactions,
+        totalDeposits: totalDeposits.toFixed(2),
+        totalWithdrawals: totalWithdrawals.toFixed(2),
+        netFlow: (totalDeposits - totalWithdrawals).toFixed(2),
+        transactionsByType: {
+          deposit: deposits.length,
+          withdrawal: withdrawals.length,
+          transfer: transfers.length
+        },
+        recentTransactions: transactions.slice(0, 10)
+      };
+
+      res.json({ 
+        success: true, 
+        analytics,
+        message: "CSV analytics generated",
+        accessed_by: req.user.username
+      });
+    })
+    .on('error', (err) => {
+      console.error('CSV parsing error:', err.message);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to parse CSV: " + err.message 
+      });
+    });
+});
+
+// Admin-only CSV analytics (full access)
+app.get("/api/admin/csv-analytics", authenticateToken, requireAdmin, (req, res) => {
+  const csvPath = path.join(__dirname, 'data', 'transactions_export.csv');
+  
+  if (!fs.existsSync(csvPath)) {
+    return res.status(404).json({ 
+      success: false, 
+      message: "CSV file not found" 
+    });
+  }
+
+  const transactions = [];
+
+  fs.createReadStream(csvPath)
+    .pipe(csv())
+    .on('data', (row) => transactions.push(row))
+    .on('end', () => {
+      const totalVolume = transactions.reduce((sum, t) => 
+        sum + parseFloat(t.amount || 0), 0
+      );
+
+      res.json({ 
+        success: true, 
+        analytics: {
+          totalTransactions: transactions.length,
+          totalVolume: totalVolume.toFixed(2),
+          allTransactions: transactions
+        },
+        message: "Full CSV data (admin access)"
+      });
+    })
+    .on('error', (err) => {
+      res.status(500).json({ 
+        success: false, 
+        message: "CSV error: " + err.message 
+      });
+    });
+});
+
+// CSV Export endpoint - generates CSV for user's transactions
+app.get("/api/user/csv-export", authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT t.transaction_id, t.transaction_type, t.amount, 
+              t.transaction_date, t.description, a.account_number
+       FROM transactions t
+       JOIN accounts a ON t.account_id = a.account_id
+       WHERE a.user_id = $1
+       ORDER BY t.transaction_date DESC`,
+      [req.user.user_id]
+    );
+
+    // Create CSV content
+    const headers = 'Transaction ID,Date,Account,Type,Amount,Description\n';
+    const rows = result.rows.map(t => 
+      `${t.transaction_id},${t.transaction_date},${t.account_number},${t.transaction_type},${t.amount},"${t.description || ''}"`
+    ).join('\n');
+
+    const csvContent = headers + rows;
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="transactions_${req.user.username}.csv"`);
+    res.send(csvContent);
+
+  } catch (err) {
+    console.error('CSV export error:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Export failed" 
+    });
+  }
+});
+
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {

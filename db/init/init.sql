@@ -202,7 +202,7 @@ $func$;
 -- ============================================
 
 INSERT INTO users (username, password_hash, full_name, email, role) VALUES
-('admin','$2b$10$rZc6vgHKqFqO5xNFvQmJ4.VhF/JqVBXQ7fN5xZ4eKgL8Nx/CcBqHC','System Administrator','admin@secure.local','admin'),
+('admin','$2a$12$rotPteM0tFvFEWUtkaxLdO2wwbfOuLrtMQx0RoZ03lS2zutC9qfx.','System Administrator','admin@secure.local','admin'),
 ('shobbs','$2b$10$XYZ1234567890abcdefghijklmnopqrstuvwxyz123456789ABC','Gerald Walker','fpowell@yahoo.com','standard'),
 ('glara','$2b$10$ABC1234567890abcdefghijklmnopqrstuvwxyz123456789DEF','Robert Parks MD','thompsonjason@pugh.com','standard'),
 ('barnold','$2b$10$DEF1234567890abcdefghijklmnopqrstuvwxyz123456789GHI','Nathan Griffin','lbailey@yahoo.com','standard'),
